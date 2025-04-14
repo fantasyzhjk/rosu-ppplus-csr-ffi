@@ -108,6 +108,7 @@ public class RosuFFI {
         int Utf8Error = 400;
         int InvalidString = 500;
         int SerializeError = 600;
+        int ConvertError = 700;
         int Unknown = 1000;
     }
 
@@ -309,6 +310,60 @@ public class RosuFFI {
 
         public static native double performance_get_clock_rate(Pointer context);
 
+        
+        /// Destroys the given instance.
+        ///
+        /// # Safety
+        ///
+        /// The passed parameter MUST have been created with the corresponding init function;
+        /// passing any other value results in undefined behavior.
+        public static native int gradual_difficulty_destroy(PointerByReference context);
+
+        /// Create a [`GradualDifficulty`] for a map of any mode.
+        public static native int gradual_difficulty_new(PointerByReference context, Pointer difficulty, Pointer beatmap);
+
+        /// Create a [`GradualDifficulty`] for a [`Beatmap`] on a specific [`GameMode`].
+        public static native int gradual_difficulty_new_with_mode(PointerByReference context, Pointer difficulty, Pointer beatmap, int mode);
+
+        public static native OptionDifficultyAttributes gradual_difficulty_next(Pointer context);
+
+        public static native OptionDifficultyAttributes gradual_difficulty_nth(Pointer context, long n);
+
+        public static native long gradual_difficulty_len(Pointer context);
+
+        /// Destroys the given instance.
+        ///
+        /// # Safety
+        ///
+        /// The passed parameter MUST have been created with the corresponding init function;
+        /// passing any other value results in undefined behavior.
+        public static native int gradual_performance_destroy(PointerByReference context);
+
+        /// Create a [`GradualPerformance`] for a map of any mode.
+        public static native int gradual_performance_new(PointerByReference context, Pointer difficulty, Pointer beatmap);
+
+        /// Create a [`GradualPerformance`] for a [`Beatmap`] on a specific [`GameMode`].
+        public static native int gradual_performance_new_with_mode(PointerByReference context, Pointer difficulty, Pointer beatmap, int mode);
+
+        /// Process the next hit object and calculate the performance attributes
+        /// for the resulting score state.
+        public static native OptionPerformanceAttributes gradual_performance_next(Pointer context, ScoreState.ByValue state);
+
+        /// Process all remaining hit objects and calculate the final performance
+        /// attributes.
+        public static native OptionPerformanceAttributes gradual_performance_last(Pointer context, ScoreState.ByValue state);
+
+        /// Process everything up to the next `n`th hitobject and calculate the
+        /// performance attributes for the resulting score state.
+        ///
+        /// Note that the count is zero-indexed, so `n=0` will process 1 object,
+        /// `n=1` will process 2, and so on.
+        public static native OptionPerformanceAttributes gradual_performance_nth(Pointer context, ScoreState.ByValue state, long n);
+
+        /// Returns the amount of remaining objects.
+        public static native long gradual_performance_len(Pointer context);
+
+
         /// Destroys the given instance.
         ///
         /// # Safety
@@ -339,11 +394,11 @@ public class RosuFFI {
 
         public static native int mods_from_bits(PointerByReference context, long bits, int mode);
 
-        public static native int mods_from_json(PointerByReference context, String str, int mode);
+        public static native int mods_from_json(PointerByReference context, String str, int mode, boolean deny_unknown_fields);
 
-        public static native int mods_from_json_sanitize(PointerByReference context, String str, int mode);
+        public static native void mods_remove_unknown_mods(Pointer context);
 
-        public static native void mods_remove_incompatible_mods(Pointer context);
+        public static native void mods_sanitize(Pointer context);
 
         public static native long mods_bits(Pointer context);
 
@@ -351,7 +406,7 @@ public class RosuFFI {
 
         public static native void mods_json(Pointer context, Pointer str);
 
-        public static native boolean mods_insert_json(Pointer context, String str);
+        public static native boolean mods_insert_json(Pointer context, String str, boolean deny_unknown_fields);
 
         public static native boolean mods_insert(Pointer context, String str);
 
@@ -406,13 +461,40 @@ public class RosuFFI {
             }
         }
 
-        @Structure.FieldOrder({ "aim", "speed", "flashlight", "slider_factor",
+        @Structure.FieldOrder({"t", "is_some"})
+        public static class OptionDifficultyAttributes extends Structure {
+            public DifficultyAttributes t;
+            public byte is_some;
+
+            public static class ByReference extends OptionDifficultyAttributes implements Structure.ByReference {}
+            public static class ByValue extends OptionDifficultyAttributes implements Structure.ByValue {}
+
+            public Optional<DifficultyAttributes> toOptional() {
+                return is_some == 1 ? Optional.of(t) : Optional.empty();
+            }
+        }
+
+        @Structure.FieldOrder({"t", "is_some"})
+        public static class OptionPerformanceAttributes extends Structure {
+            public PerformanceAttributes t;
+            public byte is_some;
+
+            public static class ByReference extends OptionPerformanceAttributes implements Structure.ByReference {}
+            public static class ByValue extends OptionPerformanceAttributes implements Structure.ByValue {}
+
+            public Optional<PerformanceAttributes> toOptional() {
+                return is_some == 1 ? Optional.of(t) : Optional.empty();
+            }
+        }
+
+        @Structure.FieldOrder({ "aim", "aim_difficult_slider_count", "speed", "flashlight", "slider_factor",
                 "speed_note_count", "aim_difficult_strain_count", "speed_difficult_strain_count",
-                "ar", "od", "hp",
-                "n_circles", "n_sliders", "n_slider_ticks", "n_spinners",
+                "ar", "great_hit_window", "ok_hit_window", "meh_hit_window", "hp",
+                "n_circles", "n_sliders", "n_large_ticks", "n_spinners",
                 "stars", "max_combo" })
         public static class OsuDifficultyAttributes extends Structure {
             public double aim;                           // Difficulty of the aim skill
+            public double aim_difficult_slider_count;    // The number of sliders weighted by difficulty.
             public double speed;                         // Difficulty of the speed skill
             public double flashlight;                   // Difficulty of the flashlight skill
             public double slider_factor;                // Ratio of aim strain with/without sliders
@@ -420,7 +502,9 @@ public class RosuFFI {
             public double aim_difficult_strain_count;   // Weighted sum of aim strains
             public double speed_difficult_strain_count; // Weighted sum of speed strains
             public double ar;                           // Approach rate
-            public double od;                           // Overall difficulty
+            public double great_hit_window;             // great hit window.
+            public double ok_hit_window;                // ok hit window.
+            public double meh_hit_window;               // meh hit window.
             public double hp;                           // Health drain rate
             public int n_circles;                       // Number of circles (unsigned int -> int)
             public int n_sliders;                       // Number of sliders (unsigned int -> int)
@@ -434,7 +518,7 @@ public class RosuFFI {
         }
 
         @Structure.FieldOrder({ "difficulty", "pp", "pp_acc", "pp_aim",
-                "pp_flashlight", "pp_speed", "effective_miss_count" })
+                "pp_flashlight", "pp_speed", "effective_miss_count", "speed_deviation" })
         public static class OsuPerformanceAttributes extends Structure {
             public OsuDifficultyAttributes difficulty; // Nested structure for difficulty attributes
             public double pp;                          // Final performance points
@@ -443,19 +527,20 @@ public class RosuFFI {
             public double pp_flashlight;               // Flashlight portion of the final pp
             public double pp_speed;                    // Speed portion of the final pp
             public double effective_miss_count;        // Misses including approximated slider breaks
+            public Optionf64 speed_deviation;          // Approximated unstable-rate
 
             public static class ByReference extends OsuPerformanceAttributes implements Structure.ByReference {}
             public static class ByValue extends OsuPerformanceAttributes implements Structure.ByValue {}
         }
 
-        @Structure.FieldOrder({ "stamina", "rhythm", "color", "peak",
+        @Structure.FieldOrder({ "stamina", "rhythm", "color", "reading",
                 "great_hit_window", "ok_hit_window", "mono_stamina_factor",
                 "stars", "max_combo", "is_convert" })
         public static class TaikoDifficultyAttributes extends Structure {
             public double stamina;               // Difficulty of the stamina skill
             public double rhythm;                // Difficulty of the rhythm skill
             public double color;                 // Difficulty of the color skill
-            public double peak;                  // Difficulty of the hardest parts of the map
+            public double reading;               // The difficulty of the reading skill.
             public double great_hit_window;      // Hit window for an n300 inclusive of mods
             public double ok_hit_window;         // Hit window for an n100 inclusive of mods
             public double mono_stamina_factor;   // Stamina difficulty ratio for mono-color streams
@@ -503,10 +588,9 @@ public class RosuFFI {
             public static class ByValue extends CatchPerformanceAttributes implements Structure.ByValue {}
         }
 
-        @Structure.FieldOrder({ "stars", "hit_window", "n_objects", "n_hold_notes", "max_combo", "is_convert" })
+        @Structure.FieldOrder({ "stars", "n_objects", "n_hold_notes", "max_combo", "is_convert" })
         public static class ManiaDifficultyAttributes extends Structure {
             public double stars;        // Final star rating
-            public double hit_window;   // Perceived hit window for n300 inclusive of rate-adjusting mods
             public int n_objects;       // Number of hit objects (unsigned int -> int in Java)
             public int n_hold_notes;    // Number of hold notes (unsigned int -> int in Java)
             public int max_combo;       // Maximum achievable combo (unsigned int -> int in Java)
@@ -682,7 +766,7 @@ public class RosuFFI {
             public static class ByValue extends BeatmapAttributes implements Structure.ByValue {}
         }
 
-        @Structure.FieldOrder({ "max_combo", "slider_tick_hits", "slider_tick_misses", "slider_end_hits",
+        @Structure.FieldOrder({ "max_combo", "osu_large_tick_hits", "osu_small_tick_hits", "slider_end_hits",
                 "n_geki", "n_katu", "n300", "n100", "n50", "misses" })
         public static class ScoreState extends Structure {
             public int max_combo;            // Maximum combo (unsigned int -> int)
@@ -1144,6 +1228,132 @@ public class RosuFFI {
         }
     }
 
+    public static class GradualDifficulty {
+        @SuppressWarnings("unused")
+        protected final Cleaner.Cleanable cleanable;
+        private final PointerByReference _context; // Context for BeatmapAttributesBuilder
+
+        private GradualDifficulty() {
+            _context = new PointerByReference();
+            this.cleanable = cleaner.register(this, cleanAction(_context));
+        }
+
+        private static Runnable cleanAction(final PointerByReference context) {
+            return () -> {
+                int rval = RosuPPLib.gradual_difficulty_destroy(context);
+                if (rval != FFIError.Ok) {
+                    try {
+                        throw new FFIException("Error destroying GradualDifficulty", rval);
+                    } catch (FFIException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+        }
+
+        /// Create a [`GradualDifficulty`] for a map of any mode.
+        public static GradualDifficulty New(Difficulty difficulty, Beatmap beatmap) throws FFIException {
+            var m = new GradualDifficulty();
+            int rval = RosuPPLib.gradual_difficulty_new(m._context, difficulty.getContext(), beatmap.getContext());
+            if (rval != FFIError.Ok) {
+                throw new FFIException("Error creating GradualDifficulty", rval);
+            }
+            return m;
+        }
+
+        /// Create a [`GradualDifficulty`] for a [`Beatmap`] on a specific [`GameMode`].
+        public static GradualDifficulty NewWithMode(Difficulty difficulty, Beatmap beatmap, Mode mode) throws FFIException {
+            var m = new GradualDifficulty();
+            int rval = RosuPPLib.gradual_difficulty_new_with_mode(m._context, difficulty.getContext(), beatmap.getContext(), mode.getValue());
+            if (rval != FFIError.Ok) {
+                throw new FFIException("Error creating GradualDifficulty", rval);
+            }
+            return m;
+        }
+
+        public RosuPPLib.OptionDifficultyAttributes Next() {
+            return RosuPPLib.gradual_difficulty_next(getContext());
+        }
+
+        public RosuPPLib.OptionDifficultyAttributes Nth(long n) {
+            return RosuPPLib.gradual_difficulty_nth(getContext(), n);
+        }
+
+        public long Len() {
+            return RosuPPLib.gradual_difficulty_len(getContext());
+        }
+
+        // Getter for the context
+        public Pointer getContext() {
+            return _context.getValue();
+        }
+    }
+
+    public static class GradualPerformance {
+        @SuppressWarnings("unused")
+        protected final Cleaner.Cleanable cleanable;
+        private final PointerByReference _context; // Context for BeatmapAttributesBuilder
+
+        private GradualPerformance() {
+            _context = new PointerByReference();
+            this.cleanable = cleaner.register(this, cleanAction(_context));
+        }
+
+        private static Runnable cleanAction(final PointerByReference context) {
+            return () -> {
+                int rval = RosuPPLib.gradual_performance_destroy(context);
+                if (rval != FFIError.Ok) {
+                    try {
+                        throw new FFIException("Error destroying GradualPerformance", rval);
+                    } catch (FFIException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+        }
+
+        /// Create a [`GradualDifficulty`] for a map of any mode.
+        public static GradualPerformance New(Difficulty difficulty, Beatmap beatmap) throws FFIException {
+            var m = new GradualPerformance();
+            int rval = RosuPPLib.gradual_performance_new(m._context, difficulty.getContext(), beatmap.getContext());
+            if (rval != FFIError.Ok) {
+                throw new FFIException("Error creating GradualPerformance", rval);
+            }
+            return m;
+        }
+
+        /// Create a [`GradualDifficulty`] for a [`Beatmap`] on a specific [`GameMode`].
+        public static GradualPerformance NewWithMode(Difficulty difficulty, Beatmap beatmap, Mode mode) throws FFIException {
+            var m = new GradualPerformance();
+            int rval = RosuPPLib.gradual_performance_new_with_mode(m._context, difficulty.getContext(), beatmap.getContext(), mode.getValue());
+            if (rval != FFIError.Ok) {
+                throw new FFIException("Error creating GradualPerformance", rval);
+            }
+            return m;
+        }
+
+        public RosuPPLib.OptionPerformanceAttributes Next(RosuPPLib.ScoreState state) {
+            return RosuPPLib.gradual_performance_next(getContext(), (RosuPPLib.ScoreState.ByValue)state);
+        }
+
+        public RosuPPLib.OptionPerformanceAttributes Last(RosuPPLib.ScoreState state) {
+            return RosuPPLib.gradual_performance_last(getContext(), (RosuPPLib.ScoreState.ByValue)state);
+        }
+
+        public RosuPPLib.OptionPerformanceAttributes Nth(long n, RosuPPLib.ScoreState state) {
+            return RosuPPLib.gradual_performance_nth(getContext(), (RosuPPLib.ScoreState.ByValue)state, n);
+        }
+
+        public long Len() {
+            return RosuPPLib.gradual_performance_len(getContext());
+        }
+
+        // Getter for the context
+        public Pointer getContext() {
+            return _context.getValue();
+        }
+    }
+
     public static class Mods {
         @SuppressWarnings("unused")
         protected final Cleaner.Cleanable cleanable;
@@ -1198,27 +1408,21 @@ public class RosuFFI {
         }
 
         /// from json
-        public static Mods fromJson(String mods, Mode mode) throws FFIException {
+        public static Mods fromJson(String mods, Mode mode, boolean deny_unknown_fields) throws FFIException {
             var m = new Mods();
-            int rval = RosuPPLib.mods_from_json(m._context, mods, mode.getValue());
+            int rval = RosuPPLib.mods_from_json(m._context, mods, mode.getValue(), deny_unknown_fields);
             if (rval != FFIError.Ok) {
                 throw new FFIException("Error creating Mods", rval);
             }
             return m;
         }
 
-        /// from json sanitize
-        public static Mods fromJsonSanitize(String mods, Mode mode) throws FFIException {
-            var m = new Mods();
-            int rval = RosuPPLib.mods_from_json_sanitize(m._context, mods, mode.getValue());
-            if (rval != FFIError.Ok) {
-                throw new FFIException("Error creating Mods", rval);
-            }
-            return m;
+        public void removeUnknownMods() {
+            RosuPPLib.mods_remove_unknown_mods(getContext());
         }
 
-        public void removeIncompatibleMods() {
-            RosuPPLib.mods_remove_incompatible_mods(getContext());
+        public void sanitize() {
+            RosuPPLib.mods_sanitize(getContext());
         }
 
         public long getBits() {
@@ -1235,8 +1439,8 @@ public class RosuFFI {
             return s;
         }
 
-        public boolean insertJson(String mod) {
-            return RosuPPLib.mods_insert_json(getContext(), mod);
+        public boolean insertJson(String mod, boolean deny_unknown_fields) {
+            return RosuPPLib.mods_insert_json(getContext(), mod, deny_unknown_fields);
         }
 
         public boolean insert(String mod) {

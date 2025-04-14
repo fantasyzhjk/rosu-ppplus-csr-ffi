@@ -76,7 +76,7 @@ public class PPUnitTest(ITestOutputHelper output)
         var calculated = 10;
 
         var state = new ScoreState();
-        for (var i = 0; i < 10; i++) {
+        for (var i = 0; i < calculated; i++) {
             state.n300 += 1;
             state.max_combo += 1;
             var attrs = gradual.Next(state).Unwarp();
