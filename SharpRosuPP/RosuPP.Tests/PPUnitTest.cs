@@ -14,22 +14,23 @@ public class PPUnitTest(ITestOutputHelper output)
 
     private void TestPP(string beatmapPath, string modstr, bool isLazer, Mode? mode = null, double compareRange = 0.0000001) {
         var b = File.ReadAllBytes(beatmapPath);
-        var beatmap = Beatmap.FromBytes(b);
+        using var beatmap = Beatmap.FromBytes(b);
 
         if (mode is not null) {
-            var convertSuccess = beatmap.Convert(mode.Value, Mods.FromAcronyms(modstr, mode.Value));
+            using var m = Mods.FromAcronyms(modstr, mode.Value);
+            var convertSuccess = beatmap.Convert(mode.Value, m);
             Assert.True(convertSuccess, "convert failed");
         } else {
             mode = beatmap.Mode();
         }
 
-        var mods = Mods.FromAcronyms(modstr, beatmap.Mode());
-        var difficulty = Difficulty.New();
+        using var mods = Mods.FromAcronyms(modstr, beatmap.Mode());
+        using var difficulty = Difficulty.New();
         difficulty.Lazer(isLazer);
         difficulty.Mods(mods);
         var dattr = difficulty.Calculate(beatmap);
 
-        var performance = Performance.New();
+        using var performance = Performance.New();
         performance.Lazer(isLazer);
         performance.Mods(mods);
 
@@ -53,10 +54,10 @@ public class PPUnitTest(ITestOutputHelper output)
         var attr2 = osubm.Mods(mods).LoadState(state, dattr).Acc(acc).Calculate();
 
         var pp = mode switch {
-            Mode.Osu => attr.osu.ToNullable()!.Value.pp,
-            Mode.Taiko => attr.taiko.ToNullable()!.Value.pp,
-            Mode.Catch => attr.fruit.ToNullable()!.Value.pp,
-            Mode.Mania => attr.mania.ToNullable()!.Value.pp,
+            Mode.Osu => attr.osu.Unwarp().pp,
+            Mode.Taiko => attr.taiko.Unwarp().pp,
+            Mode.Catch => attr.fruit.Unwarp().pp,
+            Mode.Mania => attr.mania.Unwarp().pp,
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
         };
 
@@ -67,9 +68,9 @@ public class PPUnitTest(ITestOutputHelper output)
     public void GradualTest() {
         var d = Assembly.GetExecutingAssembly().Location;
         var b = File.ReadAllBytes("../../../resources/657916.osu");
-        var beatmap = Beatmap.FromBytes(b);
-        var difficulty = Difficulty.New();
-        var gradual = GradualPerformance.New(difficulty, beatmap);
+        using var beatmap = Beatmap.FromBytes(b);
+        using var difficulty = Difficulty.New();
+        using var gradual = GradualPerformance.New(difficulty, beatmap);
 
         var totalLen = gradual.Len();
 
@@ -80,6 +81,7 @@ public class PPUnitTest(ITestOutputHelper output)
             state.n300 += 1;
             state.max_combo += 1;
             var attrs = gradual.Next(state).Unwarp();
+            output.WriteLine("{0}", attrs);
             output.WriteLine("pp: {0}", attrs.osu.Unwarp().pp);
         }
 
@@ -220,11 +222,11 @@ public class PPUnitTest(ITestOutputHelper output)
     {
         var d = Assembly.GetExecutingAssembly().Location;
         var b = File.ReadAllBytes("../../../resources/657916.osu");
-        var beatmap = Beatmap.FromBytes(b);
-        var difficulty = Difficulty.New();
+        using var beatmap = Beatmap.FromBytes(b);
+        using var difficulty = Difficulty.New();
         var dattr = difficulty.Calculate(beatmap);
 
-        var performance = Performance.New();
+        using var performance = Performance.New();
         performance.Accuracy(97.35);
         performance.Misses(1);
 
@@ -232,11 +234,11 @@ public class PPUnitTest(ITestOutputHelper output)
         var attr = performance.CalculateFromDifficulty(dattr);
         output.WriteLine("{0}", state);
 
-        var performance2 = Performance.New();
+        using var performance2 = Performance.New();
         performance2.State(state);
         var attr2 = performance.CalculateFromDifficulty(dattr);
 
-        Assert.Equal(attr2.osu.ToNullable()!.Value.pp, attr.osu.ToNullable()!.Value.pp);
+        Assert.Equal(attr2.osu.Unwarp().pp, attr.osu.Unwarp().pp);
     }
 
     [Fact]
@@ -244,10 +246,10 @@ public class PPUnitTest(ITestOutputHelper output)
     {
         var d = Assembly.GetExecutingAssembly().Location;
         var b = File.ReadAllBytes("../../../resources/2785319.osu");
-        var beatmap = Beatmap.FromBytes(b);
+        using var beatmap = Beatmap.FromBytes(b);
         beatmap.Convert(Mode.Taiko);
 
-        var difficulty = Difficulty.New();
+        using var difficulty = Difficulty.New();
         var attr = difficulty.Calculate(beatmap);
         output.WriteLine("{0}", attr);
 
@@ -256,7 +258,7 @@ public class PPUnitTest(ITestOutputHelper output)
         var attr2 = osubm.CalculateDifficulty();
         
         output.WriteLine("{0}", JsonConvert.SerializeObject(attr2, Formatting.Indented));
-        Assert.Equal(attr2.StarRating, attr.taiko.ToNullable()!.Value.stars);
+        Assert.Equal(attr2.StarRating, attr.taiko.Unwarp().stars);
     }
 
     [Fact]
@@ -264,10 +266,10 @@ public class PPUnitTest(ITestOutputHelper output)
     {
         var d = Assembly.GetExecutingAssembly().Location;
         var b = File.ReadAllBytes("../../../resources/2785319.osu");
-        var beatmap = Beatmap.FromBytes(b);
+        using var beatmap = Beatmap.FromBytes(b);
         beatmap.Convert(Mode.Catch, Mods.New(Mode.Catch));
 
-        var difficulty = Difficulty.New();
+        using var difficulty = Difficulty.New();
         var attr = difficulty.Calculate(beatmap);
         output.WriteLine("{0}", attr);
 
@@ -276,7 +278,7 @@ public class PPUnitTest(ITestOutputHelper output)
         var attr2 = osubm.CalculateDifficulty();
         
         output.WriteLine("{0}", JsonConvert.SerializeObject(attr2, Formatting.Indented));
-        Assert.Equal(attr2.StarRating, attr.fruit.ToNullable()!.Value.stars);
+        Assert.Equal(attr2.StarRating, attr.fruit.Unwarp().stars);
     }
 
     [Fact]
@@ -284,10 +286,10 @@ public class PPUnitTest(ITestOutputHelper output)
     {
         var d = Assembly.GetExecutingAssembly().Location;
         var b = File.ReadAllBytes("../../../resources/2785319.osu");
-        var beatmap = Beatmap.FromBytes(b);
+        using var beatmap = Beatmap.FromBytes(b);
         beatmap.Convert(Mode.Mania);
 
-        var difficulty = Difficulty.New();
+        using var difficulty = Difficulty.New();
         var attr = difficulty.Calculate(beatmap);
         output.WriteLine("{0}", attr);
 
@@ -296,14 +298,14 @@ public class PPUnitTest(ITestOutputHelper output)
         var attr2 = osubm.CalculateDifficulty();
         
         output.WriteLine("{0}", JsonConvert.SerializeObject(attr2, Formatting.Indented));
-        Assert.Equal(attr2.StarRating, attr.mania.ToNullable()!.Value.stars);
+        Assert.Equal(attr2.StarRating, attr.mania.Unwarp().stars);
     }
 
     [Fact]
     public void TestBeatmapAttr()
     {
-        var beatmap = Beatmap.FromPath("../../../resources/2785319.osu");
-        var builder = BeatmapAttributesBuilder.New();
+        using var beatmap = Beatmap.FromPath("../../../resources/2785319.osu");
+        using var builder = BeatmapAttributesBuilder.New();
         builder.Mods("DT");
 
         var bmattr = builder.Build(beatmap);
@@ -323,7 +325,7 @@ public class PPUnitTest(ITestOutputHelper output)
     [Fact]
     public void ModsTest()
     {
-        var s = OwnedString.Empty();
+        using var s = OwnedString.Empty();
         var j = """
                         [
                             { "acronym": "HD" },
@@ -332,13 +334,13 @@ public class PPUnitTest(ITestOutputHelper output)
                         ]
                         """;
 
-        var mods = Mods.FromJson(j, Mode.Taiko);
+        using var mods = Mods.FromJson(j, Mode.Taiko);
         Assert.Equal((uint)3, mods.Len());
         Assert.True(mods.Contains("DT"));
 
         Assert.Equal((double?)1.5, mods.ClockRate().ToNullable());
 
-        mods.Json(ref s);
+        mods.Json(s);
         var res = s.ToString();
         output.WriteLine(res);
 
