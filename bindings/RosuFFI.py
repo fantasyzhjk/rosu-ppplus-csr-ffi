@@ -78,6 +78,19 @@ def init_lib(path):
     c_lib.performance_calculate.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
     c_lib.performance_calculate_from_difficulty.argtypes = [ctypes.c_void_p, DifficultyAttributes]
     c_lib.performance_get_clock_rate.argtypes = [ctypes.c_void_p]
+    c_lib.gradual_difficulty_destroy.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+    c_lib.gradual_difficulty_new.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p, ctypes.c_void_p]
+    c_lib.gradual_difficulty_new_with_mode.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+    c_lib.gradual_difficulty_next.argtypes = [ctypes.c_void_p]
+    c_lib.gradual_difficulty_nth.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    c_lib.gradual_difficulty_len.argtypes = [ctypes.c_void_p]
+    c_lib.gradual_performance_destroy.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+    c_lib.gradual_performance_new.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p, ctypes.c_void_p]
+    c_lib.gradual_performance_new_with_mode.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int]
+    c_lib.gradual_performance_next.argtypes = [ctypes.c_void_p, ScoreState]
+    c_lib.gradual_performance_last.argtypes = [ctypes.c_void_p, ScoreState]
+    c_lib.gradual_performance_nth.argtypes = [ctypes.c_void_p, ScoreState, ctypes.c_uint32]
+    c_lib.gradual_performance_len.argtypes = [ctypes.c_void_p]
     c_lib.string_destroy.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
     c_lib.string_from_c_str.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_char)]
     c_lib.string_empty.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
@@ -129,6 +142,19 @@ def init_lib(path):
     c_lib.performance_calculate.restype = PerformanceAttributes
     c_lib.performance_calculate_from_difficulty.restype = PerformanceAttributes
     c_lib.performance_get_clock_rate.restype = ctypes.c_double
+    c_lib.gradual_difficulty_destroy.restype = ctypes.c_int
+    c_lib.gradual_difficulty_new.restype = ctypes.c_int
+    c_lib.gradual_difficulty_new_with_mode.restype = ctypes.c_int
+    c_lib.gradual_difficulty_next.restype = OptionDifficultyAttributes
+    c_lib.gradual_difficulty_nth.restype = OptionDifficultyAttributes
+    c_lib.gradual_difficulty_len.restype = ctypes.c_uint32
+    c_lib.gradual_performance_destroy.restype = ctypes.c_int
+    c_lib.gradual_performance_new.restype = ctypes.c_int
+    c_lib.gradual_performance_new_with_mode.restype = ctypes.c_int
+    c_lib.gradual_performance_next.restype = OptionPerformanceAttributes
+    c_lib.gradual_performance_last.restype = OptionPerformanceAttributes
+    c_lib.gradual_performance_nth.restype = OptionPerformanceAttributes
+    c_lib.gradual_performance_len.restype = ctypes.c_uint32
     c_lib.string_destroy.restype = ctypes.c_int
     c_lib.string_from_c_str.restype = ctypes.c_int
     c_lib.string_empty.restype = ctypes.c_int
@@ -159,6 +185,12 @@ def init_lib(path):
     c_lib.performance_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.performance_new.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.performance_s_mods.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
+    c_lib.gradual_difficulty_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
+    c_lib.gradual_difficulty_new.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
+    c_lib.gradual_difficulty_new_with_mode.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
+    c_lib.gradual_performance_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
+    c_lib.gradual_performance_new.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
+    c_lib.gradual_performance_new_with_mode.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.string_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.string_from_c_str.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.string_empty.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
@@ -256,6 +288,7 @@ class FFIError:
     Utf8Error = 400
     InvalidString = 500
     SerializeError = 600
+    ConvertError = 700
     Unknown = 1000
 
 
@@ -1871,6 +1904,56 @@ class PerformanceAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "mode", value)
 
 
+class OptionDifficultyAttributes(ctypes.Structure):
+    """May optionally hold a value."""
+
+    _fields_ = [
+        ("_t", DifficultyAttributes),
+        ("_is_some", ctypes.c_uint8),
+    ]
+
+    @property
+    def value(self) -> DifficultyAttributes:
+        """Returns the value if it exists, or None."""
+        if self._is_some == 1:
+            return self._t
+        else:
+            return None
+
+    def is_some(self) -> bool:
+        """Returns true if the value exists."""
+        return self._is_some == 1
+
+    def is_none(self) -> bool:
+        """Returns true if the value does not exist."""
+        return self._is_some != 0
+
+
+class OptionPerformanceAttributes(ctypes.Structure):
+    """May optionally hold a value."""
+
+    _fields_ = [
+        ("_t", PerformanceAttributes),
+        ("_is_some", ctypes.c_uint8),
+    ]
+
+    @property
+    def value(self) -> PerformanceAttributes:
+        """Returns the value if it exists, or None."""
+        if self._is_some == 1:
+            return self._t
+        else:
+            return None
+
+    def is_some(self) -> bool:
+        """Returns true if the value exists."""
+        return self._is_some == 1
+
+    def is_none(self) -> bool:
+        """Returns true if the value does not exist."""
+        return self._is_some != 0
+
+
 
 
 class callbacks:
@@ -2221,6 +2304,102 @@ class Performance:
     def get_clock_rate(self, ) -> float:
         """"""
         return c_lib.performance_get_clock_rate(self._ctx, )
+
+
+
+class GradualDifficulty:
+    __api_lock = object()
+
+    def __init__(self, api_lock, ctx):
+        assert(api_lock == GradualDifficulty.__api_lock), "You must create this with a static constructor." 
+        self._ctx = ctx
+
+    @property
+    def _as_parameter_(self):
+        return self._ctx
+
+    @staticmethod
+    def new(difficulty: ctypes.c_void_p, beatmap: ctypes.c_void_p) -> GradualDifficulty:
+        """ Create a [`GradualDifficulty`] for a map of any mode."""
+        ctx = ctypes.c_void_p()
+        c_lib.gradual_difficulty_new(ctx, difficulty, beatmap)
+        self = GradualDifficulty(GradualDifficulty.__api_lock, ctx)
+        return self
+
+    @staticmethod
+    def new_with_mode(difficulty: ctypes.c_void_p, beatmap: ctypes.c_void_p, mode: ctypes.c_int) -> GradualDifficulty:
+        """ Create a [`GradualDifficulty`] for a [`Beatmap`] on a specific [`GameMode`]."""
+        ctx = ctypes.c_void_p()
+        c_lib.gradual_difficulty_new_with_mode(ctx, difficulty, beatmap, mode)
+        self = GradualDifficulty(GradualDifficulty.__api_lock, ctx)
+        return self
+
+    def __del__(self):
+        c_lib.gradual_difficulty_destroy(self._ctx, )
+    def next(self, ) -> OptionDifficultyAttributes:
+        """"""
+        return c_lib.gradual_difficulty_next(self._ctx, )
+
+    def nth(self, n: int) -> OptionDifficultyAttributes:
+        """"""
+        return c_lib.gradual_difficulty_nth(self._ctx, n)
+
+    def len(self, ) -> int:
+        """"""
+        return c_lib.gradual_difficulty_len(self._ctx, )
+
+
+
+class GradualPerformance:
+    __api_lock = object()
+
+    def __init__(self, api_lock, ctx):
+        assert(api_lock == GradualPerformance.__api_lock), "You must create this with a static constructor." 
+        self._ctx = ctx
+
+    @property
+    def _as_parameter_(self):
+        return self._ctx
+
+    @staticmethod
+    def new(difficulty: ctypes.c_void_p, beatmap: ctypes.c_void_p) -> GradualPerformance:
+        """ Create a [`GradualPerformance`] for a map of any mode."""
+        ctx = ctypes.c_void_p()
+        c_lib.gradual_performance_new(ctx, difficulty, beatmap)
+        self = GradualPerformance(GradualPerformance.__api_lock, ctx)
+        return self
+
+    @staticmethod
+    def new_with_mode(difficulty: ctypes.c_void_p, beatmap: ctypes.c_void_p, mode: ctypes.c_int) -> GradualPerformance:
+        """ Create a [`GradualPerformance`] for a [`Beatmap`] on a specific [`GameMode`]."""
+        ctx = ctypes.c_void_p()
+        c_lib.gradual_performance_new_with_mode(ctx, difficulty, beatmap, mode)
+        self = GradualPerformance(GradualPerformance.__api_lock, ctx)
+        return self
+
+    def __del__(self):
+        c_lib.gradual_performance_destroy(self._ctx, )
+    def next(self, state: ScoreState) -> OptionPerformanceAttributes:
+        """ Process the next hit object and calculate the performance attributes
+ for the resulting score state."""
+        return c_lib.gradual_performance_next(self._ctx, state)
+
+    def last(self, state: ScoreState) -> OptionPerformanceAttributes:
+        """ Process all remaining hit objects and calculate the final performance
+ attributes."""
+        return c_lib.gradual_performance_last(self._ctx, state)
+
+    def nth(self, state: ScoreState, n: int) -> OptionPerformanceAttributes:
+        """ Process everything up to the next `n`th hitobject and calculate the
+ performance attributes for the resulting score state.
+
+ Note that the count is zero-indexed, so `n=0` will process 1 object,
+ `n=1` will process 2, and so on."""
+        return c_lib.gradual_performance_nth(self._ctx, state, n)
+
+    def len(self, ) -> int:
+        """ Returns the amount of remaining objects."""
+        return c_lib.gradual_performance_len(self._ctx, )
 
 
 

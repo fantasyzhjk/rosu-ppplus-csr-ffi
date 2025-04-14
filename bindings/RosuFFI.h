@@ -48,6 +48,10 @@ typedef struct beatmapattributesbuilder beatmapattributesbuilder;
 
 typedef struct difficulty difficulty;
 
+typedef struct gradualdifficulty gradualdifficulty;
+
+typedef struct gradualperformance gradualperformance;
+
 typedef struct mods mods;
 
 typedef struct ownedstring ownedstring;
@@ -63,6 +67,7 @@ typedef enum ffierror
     FFIERROR_UTF8ERROR = 400,
     FFIERROR_INVALIDSTRING = 500,
     FFIERROR_SERIALIZEERROR = 600,
+    FFIERROR_CONVERTERROR = 700,
     FFIERROR_UNKNOWN = 1000,
     } ffierror;
 
@@ -424,6 +429,24 @@ typedef struct performanceattributes
     mode mode;
     } performanceattributes;
 
+///Option type containing boolean flag and maybe valid data.
+typedef struct optiondifficultyattributes
+    {
+    ///Element that is maybe valid.
+    difficultyattributes t;
+    ///Byte where `1` means element `t` is valid.
+    uint8_t is_some;
+    } optiondifficultyattributes;
+
+///Option type containing boolean flag and maybe valid data.
+typedef struct optionperformanceattributes
+    {
+    ///Element that is maybe valid.
+    performanceattributes t;
+    ///Byte where `1` means element `t` is valid.
+    uint8_t is_some;
+    } optionperformanceattributes;
+
 
 /// Destroys the given instance.
 ///
@@ -585,6 +608,58 @@ performanceattributes performance_calculate(const performance* context, const be
 performanceattributes performance_calculate_from_difficulty(const performance* context, difficultyattributes difficulty_attr);
 
 double performance_get_clock_rate(performance* context);
+
+/// Destroys the given instance.
+///
+/// # Safety
+///
+/// The passed parameter MUST have been created with the corresponding init function;
+/// passing any other value results in undefined behavior.
+ffierror gradual_difficulty_destroy(gradualdifficulty** context);
+
+/// Create a [`GradualDifficulty`] for a map of any mode.
+ffierror gradual_difficulty_new(gradualdifficulty** context, const difficulty* difficulty, const beatmap* beatmap);
+
+/// Create a [`GradualDifficulty`] for a [`Beatmap`] on a specific [`GameMode`].
+ffierror gradual_difficulty_new_with_mode(gradualdifficulty** context, const difficulty* difficulty, const beatmap* beatmap, mode mode);
+
+optiondifficultyattributes gradual_difficulty_next(gradualdifficulty* context);
+
+optiondifficultyattributes gradual_difficulty_nth(gradualdifficulty* context, uint32_t n);
+
+uint32_t gradual_difficulty_len(const gradualdifficulty* context);
+
+/// Destroys the given instance.
+///
+/// # Safety
+///
+/// The passed parameter MUST have been created with the corresponding init function;
+/// passing any other value results in undefined behavior.
+ffierror gradual_performance_destroy(gradualperformance** context);
+
+/// Create a [`GradualPerformance`] for a map of any mode.
+ffierror gradual_performance_new(gradualperformance** context, const difficulty* difficulty, const beatmap* beatmap);
+
+/// Create a [`GradualPerformance`] for a [`Beatmap`] on a specific [`GameMode`].
+ffierror gradual_performance_new_with_mode(gradualperformance** context, const difficulty* difficulty, const beatmap* beatmap, mode mode);
+
+/// Process the next hit object and calculate the performance attributes
+/// for the resulting score state.
+optionperformanceattributes gradual_performance_next(gradualperformance* context, scorestate state);
+
+/// Process all remaining hit objects and calculate the final performance
+/// attributes.
+optionperformanceattributes gradual_performance_last(gradualperformance* context, scorestate state);
+
+/// Process everything up to the next `n`th hitobject and calculate the
+/// performance attributes for the resulting score state.
+///
+/// Note that the count is zero-indexed, so `n=0` will process 1 object,
+/// `n=1` will process 2, and so on.
+optionperformanceattributes gradual_performance_nth(gradualperformance* context, scorestate state, uint32_t n);
+
+/// Returns the amount of remaining objects.
+uint32_t gradual_performance_len(const gradualperformance* context);
 
 /// Destroys the given instance.
 ///

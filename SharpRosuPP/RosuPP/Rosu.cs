@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
@@ -96,6 +97,7 @@ public partial struct ScoreState
 public partial struct OsuDifficultyAttributes
 {
     public readonly uint n_objects => n_circles + n_sliders + n_spinners;
+    public readonly double od => (80.0 - great_hit_window) / 6.0;
 }
 
 public partial struct OsuPerformanceAttributes
@@ -151,6 +153,47 @@ public partial struct PerformanceAttributes
         return str.ToString();
     }
 }
+
+public partial struct OptionDifficultyAttributes {
+    public DifficultyAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(DifficultyAttributes)} is null");
+}
+
+public partial struct OptionOsuDifficultyAttributes {
+    public OsuDifficultyAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(OsuDifficultyAttributes)} is null");
+}
+
+public partial struct OptionTaikoDifficultyAttributes {
+    public TaikoDifficultyAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(TaikoDifficultyAttributes)} is null");
+}
+
+public partial struct OptionCatchDifficultyAttributes {
+    public CatchDifficultyAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(CatchDifficultyAttributes)} is null");
+}
+
+public partial struct OptionManiaDifficultyAttributes {
+    public ManiaDifficultyAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(ManiaDifficultyAttributes)} is null");
+}
+
+public partial struct OptionPerformanceAttributes {
+    public PerformanceAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(PerformanceAttributes)} is null");
+}
+
+public partial struct OptionOsuPerformanceAttributes {
+    public OsuPerformanceAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(OsuPerformanceAttributes)} is null");
+}
+
+public partial struct OptionTaikoPerformanceAttributes {
+    public TaikoPerformanceAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(TaikoPerformanceAttributes)} is null");
+}
+
+public partial struct OptionCatchPerformanceAttributes {
+    public CatchPerformanceAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(CatchPerformanceAttributes)} is null");
+}
+
+public partial struct OptionManiaPerformanceAttributes {
+    public ManiaPerformanceAttributes Unwarp() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(ManiaPerformanceAttributes)} is null");
+}
+
 
 public partial struct ScoreState
 {
@@ -223,6 +266,28 @@ public partial class Performance
     }
 }
 
+public partial class GradualDifficulty
+{
+    public static GradualDifficulty New(Difficulty difficulty, Beatmap beatmap) {
+        return GradualDifficulty.New(difficulty.Context, beatmap.Context);
+    }
+
+    public static GradualDifficulty NewWithMode(Difficulty difficulty, Beatmap beatmap, Mode mode) {
+        return GradualDifficulty.NewWithMode(difficulty.Context, beatmap.Context, mode);
+    }
+}
+
+public partial class GradualPerformance
+{
+    public static GradualPerformance New(Difficulty difficulty, Beatmap beatmap) {
+        return GradualPerformance.New(difficulty.Context, beatmap.Context);
+    }
+
+    public static GradualPerformance NewWithMode(Difficulty difficulty, Beatmap beatmap, Mode mode) {
+        return GradualPerformance.NewWithMode(difficulty.Context, beatmap.Context, mode);
+    }
+}
+
 public partial class BeatmapAttributesBuilder
 {
     public BeatmapAttributes Build(Beatmap beatmap)
@@ -281,10 +346,19 @@ public partial class Beatmap
     }
 
 }
+
 public partial class Mods
 {
     public void Json(ref OwnedString str) {
         this.Json(str.Context);
+    }
+
+    public static Mods FromJson(string str, Mode mode) {
+        return Mods.FromJson(str, mode, false);
+    }
+
+    public bool InsertJson(string str) {
+        return this.InsertJson(str, false);
     }
 }
 
