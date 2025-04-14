@@ -1,4 +1,4 @@
-use interoptopus::ffi_type;
+use interoptopus::{ffi_type, patterns::option::FFIOption};
 
 /// The result of a difficulty calculation on an osu!standard map.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -7,6 +7,8 @@ use interoptopus::ffi_type;
 pub struct OsuDifficultyAttributes {
     /// The difficulty of the aim skill.
     pub aim: f64,
+    /// The number of sliders weighted by difficulty.
+    pub aim_difficult_slider_count: f64,
     /// The difficulty of the speed skill.
     pub speed: f64,
     /// The difficulty of the flashlight skill.
@@ -21,9 +23,13 @@ pub struct OsuDifficultyAttributes {
     pub speed_difficult_strain_count: f64,
     /// The approach rate.
     pub ar: f64,
+    /// The great hit window.
+    pub great_hit_window: f64,
+    /// The ok hit window.
+    pub ok_hit_window: f64,
+    /// The meh hit window.
+    pub meh_hit_window: f64,
     /// The overall difficulty
-    pub od: f64,
-    /// The health drain rate.
     pub hp: f64,
     /// The amount of circles.
     pub n_circles: u32,
@@ -62,6 +68,7 @@ impl From<rosu_pp::osu::OsuDifficultyAttributes> for OsuDifficultyAttributes {
     fn from(attributes: rosu_pp::osu::OsuDifficultyAttributes) -> Self {
         Self {
             aim: attributes.aim,
+            aim_difficult_slider_count: attributes.aim_difficult_slider_count,
             speed: attributes.speed,
             flashlight: attributes.flashlight,
             slider_factor: attributes.slider_factor,
@@ -69,7 +76,9 @@ impl From<rosu_pp::osu::OsuDifficultyAttributes> for OsuDifficultyAttributes {
             aim_difficult_strain_count: attributes.aim_difficult_strain_count,
             speed_difficult_strain_count: attributes.speed_difficult_strain_count,
             ar: attributes.ar,
-            od: attributes.od,
+            great_hit_window: attributes.great_hit_window,
+            ok_hit_window: attributes.ok_hit_window,
+            meh_hit_window: attributes.meh_hit_window,
             hp: attributes.hp,
             n_circles: attributes.n_circles,
             n_sliders: attributes.n_sliders,
@@ -85,6 +94,7 @@ impl From<OsuDifficultyAttributes> for rosu_pp::osu::OsuDifficultyAttributes {
     fn from(attributes: OsuDifficultyAttributes) -> Self {
         Self {
             aim: attributes.aim,
+            aim_difficult_slider_count: attributes.aim_difficult_slider_count,
             speed: attributes.speed,
             flashlight: attributes.flashlight,
             slider_factor: attributes.slider_factor,
@@ -92,7 +102,9 @@ impl From<OsuDifficultyAttributes> for rosu_pp::osu::OsuDifficultyAttributes {
             aim_difficult_strain_count: attributes.aim_difficult_strain_count,
             speed_difficult_strain_count: attributes.speed_difficult_strain_count,
             ar: attributes.ar,
-            od: attributes.od,
+            great_hit_window: attributes.great_hit_window,
+            ok_hit_window: attributes.ok_hit_window,
+            meh_hit_window: attributes.meh_hit_window,
             hp: attributes.hp,
             n_circles: attributes.n_circles,
             n_sliders: attributes.n_sliders,
@@ -123,6 +135,8 @@ pub struct OsuPerformanceAttributes {
     pub pp_speed: f64,
     /// Misses including an approximated amount of slider breaks
     pub effective_miss_count: f64,
+    /// Approximated unstable-rate
+    pub speed_deviation: FFIOption<f64>,
 }
 
 impl OsuPerformanceAttributes {
@@ -156,6 +170,7 @@ impl From<rosu_pp::osu::OsuPerformanceAttributes> for OsuPerformanceAttributes {
             pp_flashlight: attributes.pp_flashlight,
             pp_speed: attributes.pp_speed,
             effective_miss_count: attributes.effective_miss_count,
+            speed_deviation: attributes.speed_deviation.into(),
         }
     }
 }
@@ -170,6 +185,7 @@ impl From<OsuPerformanceAttributes> for rosu_pp::osu::OsuPerformanceAttributes {
             pp_flashlight: attributes.pp_flashlight,
             pp_speed: attributes.pp_speed,
             effective_miss_count: attributes.effective_miss_count,
+            speed_deviation: attributes.speed_deviation.into_option(),
         }
     }
 }

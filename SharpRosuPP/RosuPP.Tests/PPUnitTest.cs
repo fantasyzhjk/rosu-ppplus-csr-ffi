@@ -307,7 +307,7 @@ public class PPUnitTest(ITestOutputHelper output)
                         ]
                         """;
 
-        var mods = Mods.FromJson(j, Mode.Taiko);
+        var mods = Mods.FromJson(j, Mode.Taiko, true);
         Assert.Equal((uint)3, mods.Len());
         Assert.True(mods.Contains("DT"));
 

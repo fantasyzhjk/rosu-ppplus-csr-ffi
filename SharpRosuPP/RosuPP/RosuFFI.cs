@@ -503,31 +503,22 @@ namespace RosuPP
         }
 
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mods_from_json")]
-        public static extern FFIError mods_from_json(ref IntPtr context, string str, Mode mode);
+        public static extern FFIError mods_from_json(ref IntPtr context, string str, Mode mode, bool deny_unknown_fields);
 
-        public static void mods_from_json_checked(ref IntPtr context, string str, Mode mode)
+        public static void mods_from_json_checked(ref IntPtr context, string str, Mode mode, bool deny_unknown_fields)
         {
-            var rval = mods_from_json(ref context, str, mode);;
+            var rval = mods_from_json(ref context, str, mode, deny_unknown_fields);;
             if (rval != FFIError.Ok)
             {
                 throw new InteropException<FFIError>(rval);
             }
         }
 
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mods_from_json_sanitize")]
-        public static extern FFIError mods_from_json_sanitize(ref IntPtr context, string str, Mode mode);
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mods_remove_unknown_mods")]
+        public static extern void mods_remove_unknown_mods(IntPtr context);
 
-        public static void mods_from_json_sanitize_checked(ref IntPtr context, string str, Mode mode)
-        {
-            var rval = mods_from_json_sanitize(ref context, str, mode);;
-            if (rval != FFIError.Ok)
-            {
-                throw new InteropException<FFIError>(rval);
-            }
-        }
-
-        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mods_remove_incompatible_mods")]
-        public static extern void mods_remove_incompatible_mods(IntPtr context);
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mods_sanitize")]
+        public static extern void mods_sanitize(IntPtr context);
 
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mods_bits")]
         public static extern uint mods_bits(IntPtr context);
@@ -539,7 +530,7 @@ namespace RosuPP
         public static extern void mods_json(IntPtr context, IntPtr str);
 
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mods_insert_json")]
-        public static extern bool mods_insert_json(IntPtr context, string str);
+        public static extern bool mods_insert_json(IntPtr context, string str, bool deny_unknown_fields);
 
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "mods_insert")]
         public static extern bool mods_insert(IntPtr context, string str);
@@ -681,8 +672,6 @@ namespace RosuPP
     {
         /// The final star rating.
         public double stars;
-        /// The perceived hit window for an n300 inclusive of rate-adjusting mods (DT/HT/etc).
-        public double hit_window;
         /// The amount of hitobjects in the map.
         public uint n_objects;
         /// The amount of hold notes in the map.
@@ -716,6 +705,8 @@ namespace RosuPP
     {
         /// The difficulty of the aim skill.
         public double aim;
+        /// The number of sliders weighted by difficulty.
+        public double aim_difficult_slider_count;
         /// The difficulty of the speed skill.
         public double speed;
         /// The difficulty of the flashlight skill.
@@ -730,9 +721,13 @@ namespace RosuPP
         public double speed_difficult_strain_count;
         /// The approach rate.
         public double ar;
+        /// The great hit window.
+        public double great_hit_window;
+        /// The ok hit window.
+        public double ok_hit_window;
+        /// The meh hit window.
+        public double meh_hit_window;
         /// The overall difficulty
-        public double od;
-        /// The health drain rate.
         public double hp;
         /// The amount of circles.
         public uint n_circles;
@@ -774,6 +769,8 @@ namespace RosuPP
         public double pp_speed;
         /// Misses including an approximated amount of slider breaks
         public double effective_miss_count;
+        /// Approximated unstable-rate
+        public Optionf64 speed_deviation;
     }
 
     [Serializable]
@@ -848,8 +845,8 @@ namespace RosuPP
         public double rhythm;
         /// The difficulty of the color skill.
         public double color;
-        /// The difficulty of the hardest parts of the map.
-        public double peak;
+        /// The difficulty of the reading skill.
+        public double reading;
         /// The perceived hit window for an n300 inclusive of rate-adjusting mods (DT/HT/etc)
         public double great_hit_window;
         /// The perceived hit window for an n100 inclusive of rate-adjusting mods (DT/HT/etc)
@@ -1802,21 +1799,10 @@ namespace RosuPP
             return self;
         }
 
-        public static Mods FromJson(string str, Mode mode)
+        public static Mods FromJson(string str, Mode mode, bool deny_unknown_fields)
         {
             var self = new Mods();
-            var rval = RosuLibrary.mods_from_json(ref self._context, str, mode);
-            if (rval != FFIError.Ok)
-            {
-                throw new InteropException<FFIError>(rval);
-            }
-            return self;
-        }
-
-        public static Mods FromJsonSanitize(string str, Mode mode)
-        {
-            var self = new Mods();
-            var rval = RosuLibrary.mods_from_json_sanitize(ref self._context, str, mode);
+            var rval = RosuLibrary.mods_from_json(ref self._context, str, mode, deny_unknown_fields);
             if (rval != FFIError.Ok)
             {
                 throw new InteropException<FFIError>(rval);
@@ -1833,9 +1819,14 @@ namespace RosuPP
             }
         }
 
-        public void RemoveIncompatibleMods()
+        public void RemoveUnknownMods()
         {
-            RosuLibrary.mods_remove_incompatible_mods(_context);
+            RosuLibrary.mods_remove_unknown_mods(_context);
+        }
+
+        public void Sanitize()
+        {
+            RosuLibrary.mods_sanitize(_context);
         }
 
         public uint Bits()
@@ -1853,9 +1844,9 @@ namespace RosuPP
             RosuLibrary.mods_json(_context, str);
         }
 
-        public bool InsertJson(string str)
+        public bool InsertJson(string str, bool deny_unknown_fields)
         {
-            return RosuLibrary.mods_insert_json(_context, str);
+            return RosuLibrary.mods_insert_json(_context, str, deny_unknown_fields);
         }
 
         public bool Insert(string str)

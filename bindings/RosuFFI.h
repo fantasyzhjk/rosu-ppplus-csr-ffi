@@ -90,8 +90,6 @@ typedef struct maniadifficultyattributes
     {
     /// The final star rating.
     double stars;
-    /// The perceived hit window for an n300 inclusive of rate-adjusting mods (DT/HT/etc).
-    double hit_window;
     /// The amount of hitobjects in the map.
     uint32_t n_objects;
     /// The amount of hold notes in the map.
@@ -109,6 +107,8 @@ typedef struct osudifficultyattributes
     {
     /// The difficulty of the aim skill.
     double aim;
+    /// The number of sliders weighted by difficulty.
+    double aim_difficult_slider_count;
     /// The difficulty of the speed skill.
     double speed;
     /// The difficulty of the flashlight skill.
@@ -123,9 +123,13 @@ typedef struct osudifficultyattributes
     double speed_difficult_strain_count;
     /// The approach rate.
     double ar;
+    /// The great hit window.
+    double great_hit_window;
+    /// The ok hit window.
+    double ok_hit_window;
+    /// The meh hit window.
+    double meh_hit_window;
     /// The overall difficulty
-    double od;
-    /// The health drain rate.
     double hp;
     /// The amount of circles.
     uint32_t n_circles;
@@ -205,8 +209,8 @@ typedef struct taikodifficultyattributes
     double rhythm;
     /// The difficulty of the color skill.
     double color;
-    /// The difficulty of the hardest parts of the map.
-    double peak;
+    /// The difficulty of the reading skill.
+    double reading;
     /// The perceived hit window for an n300 inclusive of rate-adjusting mods (DT/HT/etc)
     double great_hit_window;
     /// The perceived hit window for an n100 inclusive of rate-adjusting mods (DT/HT/etc)
@@ -283,6 +287,8 @@ typedef struct osuperformanceattributes
     double pp_speed;
     /// Misses including an approximated amount of slider breaks
     double effective_miss_count;
+    /// Approximated unstable-rate
+    optionf64 speed_deviation;
     } osuperformanceattributes;
 
 /// The result of a performance calculation on an osu!taiko map.
@@ -610,11 +616,11 @@ ffierror mods_from_acronyms(mods** context, const char* str, mode mode);
 
 ffierror mods_from_bits(mods** context, uint32_t bits, mode mode);
 
-ffierror mods_from_json(mods** context, const char* str, mode mode);
+ffierror mods_from_json(mods** context, const char* str, mode mode, bool deny_unknown_fields);
 
-ffierror mods_from_json_sanitize(mods** context, const char* str, mode mode);
+void mods_remove_unknown_mods(mods* context);
 
-void mods_remove_incompatible_mods(mods* context);
+void mods_sanitize(mods* context);
 
 uint32_t mods_bits(mods* context);
 
@@ -622,7 +628,7 @@ uint32_t mods_len(mods* context);
 
 void mods_json(mods* context, ownedstring* str);
 
-bool mods_insert_json(mods* context, const char* str);
+bool mods_insert_json(mods* context, const char* str, bool deny_unknown_fields);
 
 bool mods_insert(mods* context, const char* str);
 
