@@ -354,4 +354,23 @@ public class PPUnitTest(ITestOutputHelper output)
         mods.Insert("HR");
         Assert.Equal((uint)4, mods.Len());
     }
+
+    [Fact]
+    public void BeatmapInfoTest() {
+        var d = Assembly.GetExecutingAssembly().Location;
+        var b = File.ReadAllBytes("../../../resources/657916.osu");
+        using var beatmap = Beatmap.FromBytes(b);
+        using var hitobjects = HitObjects.New(beatmap);
+
+        var len = hitobjects.Len();
+        
+        Assert.Equal((uint)1368, len);
+
+        uint index = 0;
+        while (index < len) {
+            var obj = hitobjects.Next().ToNullable();
+            Assert.NotNull(obj);
+            index += 1;
+        }
+    }
 }

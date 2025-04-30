@@ -29,8 +29,23 @@ def init_lib(path):
     c_lib.beatmap_convert.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
     c_lib.beatmap_bpm.argtypes = [ctypes.c_void_p]
     c_lib.beatmap_total_break_time.argtypes = [ctypes.c_void_p]
-    c_lib.beatmap_mode.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_version.argtypes = [ctypes.c_void_p]
     c_lib.beatmap_is_convert.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_stack_leniency.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_mode.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_ar.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_cs.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_hp.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_od.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_slider_multiplier.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_slider_tick_rate.argtypes = [ctypes.c_void_p]
+    c_lib.hitobjects_destroy.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
+    c_lib.hitobjects_new.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p]
+    c_lib.hitobjects_len.argtypes = [ctypes.c_void_p]
+    c_lib.hitobjects_get.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    c_lib.hitobjects_next.argtypes = [ctypes.c_void_p]
+    c_lib.hitobjects_prev.argtypes = [ctypes.c_void_p]
+    c_lib.hitobjects_reset.argtypes = [ctypes.c_void_p]
     c_lib.difficulty_destroy.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
     c_lib.difficulty_new.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
     c_lib.difficulty_p_mods.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
@@ -127,8 +142,22 @@ def init_lib(path):
     c_lib.beatmap_convert.restype = ctypes.c_bool
     c_lib.beatmap_bpm.restype = ctypes.c_double
     c_lib.beatmap_total_break_time.restype = ctypes.c_double
-    c_lib.beatmap_mode.restype = ctypes.c_int
+    c_lib.beatmap_version.restype = ctypes.c_int32
     c_lib.beatmap_is_convert.restype = ctypes.c_bool
+    c_lib.beatmap_stack_leniency.restype = ctypes.c_float
+    c_lib.beatmap_mode.restype = ctypes.c_int
+    c_lib.beatmap_ar.restype = ctypes.c_float
+    c_lib.beatmap_cs.restype = ctypes.c_float
+    c_lib.beatmap_hp.restype = ctypes.c_float
+    c_lib.beatmap_od.restype = ctypes.c_float
+    c_lib.beatmap_slider_multiplier.restype = ctypes.c_double
+    c_lib.beatmap_slider_tick_rate.restype = ctypes.c_double
+    c_lib.hitobjects_destroy.restype = ctypes.c_int
+    c_lib.hitobjects_new.restype = ctypes.c_int
+    c_lib.hitobjects_len.restype = ctypes.c_uint32
+    c_lib.hitobjects_get.restype = OptionHitObject
+    c_lib.hitobjects_next.restype = OptionHitObject
+    c_lib.hitobjects_prev.restype = OptionHitObject
     c_lib.difficulty_destroy.restype = ctypes.c_int
     c_lib.difficulty_new.restype = ctypes.c_int
     c_lib.difficulty_s_mods.restype = ctypes.c_int
@@ -179,6 +208,8 @@ def init_lib(path):
     c_lib.beatmap_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.beatmap_from_bytes.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.beatmap_from_path.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
+    c_lib.hitobjects_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
+    c_lib.hitobjects_new.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.difficulty_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.difficulty_new.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.difficulty_s_mods.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
@@ -252,6 +283,13 @@ class _Iter(object):
         rval = self.target[self.i]
         self.i += 1
         return rval
+
+
+class HitObjectKind:
+    Circle = 0
+    Slider = 1
+    Spinner = 2
+    Hold = 3
 
 
 class HitResultPriority:
@@ -734,6 +772,41 @@ class OsuDifficultyAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "max_combo", value)
 
 
+class Pos(ctypes.Structure):
+
+    # These fields represent the underlying C data layout
+    _fields_ = [
+        ("x", ctypes.c_float),
+        ("y", ctypes.c_float),
+    ]
+
+    def __init__(self, x: float = None, y: float = None):
+        if x is not None:
+            self.x = x
+        if y is not None:
+            self.y = y
+
+    @property
+    def x(self) -> float:
+        """ Position on the x-axis."""
+        return ctypes.Structure.__get__(self, "x")
+
+    @x.setter
+    def x(self, value: float):
+        """ Position on the x-axis."""
+        return ctypes.Structure.__set__(self, "x", value)
+
+    @property
+    def y(self) -> float:
+        """ Position on the y-axis."""
+        return ctypes.Structure.__get__(self, "y")
+
+    @y.setter
+    def y(self, value: float):
+        """ Position on the y-axis."""
+        return ctypes.Structure.__set__(self, "y", value)
+
+
 class ScoreState(ctypes.Structure):
     """ Aggregation for a score's current state."""
 
@@ -1125,6 +1198,59 @@ class CatchPerformanceAttributes(ctypes.Structure):
     def pp(self, value: float):
         """ The final performance points."""
         return ctypes.Structure.__set__(self, "pp", value)
+
+
+class HitObjectInfo(ctypes.Structure):
+
+    # These fields represent the underlying C data layout
+    _fields_ = [
+        ("kind", ctypes.c_int),
+        ("repeats", ctypes.c_uint32),
+        ("expected_dist", Optionf64),
+        ("duration", ctypes.c_double),
+    ]
+
+    def __init__(self, kind: ctypes.c_int = None, repeats: int = None, expected_dist: Optionf64 = None, duration: float = None):
+        if kind is not None:
+            self.kind = kind
+        if repeats is not None:
+            self.repeats = repeats
+        if expected_dist is not None:
+            self.expected_dist = expected_dist
+        if duration is not None:
+            self.duration = duration
+
+    @property
+    def kind(self) -> ctypes.c_int:
+        return ctypes.Structure.__get__(self, "kind")
+
+    @kind.setter
+    def kind(self, value: ctypes.c_int):
+        return ctypes.Structure.__set__(self, "kind", value)
+
+    @property
+    def repeats(self) -> int:
+        return ctypes.Structure.__get__(self, "repeats")
+
+    @repeats.setter
+    def repeats(self, value: int):
+        return ctypes.Structure.__set__(self, "repeats", value)
+
+    @property
+    def expected_dist(self) -> Optionf64:
+        return ctypes.Structure.__get__(self, "expected_dist")
+
+    @expected_dist.setter
+    def expected_dist(self, value: Optionf64):
+        return ctypes.Structure.__set__(self, "expected_dist", value)
+
+    @property
+    def duration(self) -> float:
+        return ctypes.Structure.__get__(self, "duration")
+
+    @duration.setter
+    def duration(self, value: float):
+        return ctypes.Structure.__set__(self, "duration", value)
 
 
 class HitWindows(ctypes.Structure):
@@ -1740,6 +1866,48 @@ class DifficultyAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "mode", value)
 
 
+class HitObject(ctypes.Structure):
+
+    # These fields represent the underlying C data layout
+    _fields_ = [
+        ("pos", Pos),
+        ("start_time", ctypes.c_double),
+        ("kind", HitObjectInfo),
+    ]
+
+    def __init__(self, pos: Pos = None, start_time: float = None, kind: HitObjectInfo = None):
+        if pos is not None:
+            self.pos = pos
+        if start_time is not None:
+            self.start_time = start_time
+        if kind is not None:
+            self.kind = kind
+
+    @property
+    def pos(self) -> Pos:
+        return ctypes.Structure.__get__(self, "pos")
+
+    @pos.setter
+    def pos(self, value: Pos):
+        return ctypes.Structure.__set__(self, "pos", value)
+
+    @property
+    def start_time(self) -> float:
+        return ctypes.Structure.__get__(self, "start_time")
+
+    @start_time.setter
+    def start_time(self, value: float):
+        return ctypes.Structure.__set__(self, "start_time", value)
+
+    @property
+    def kind(self) -> HitObjectInfo:
+        return ctypes.Structure.__get__(self, "kind")
+
+    @kind.setter
+    def kind(self, value: HitObjectInfo):
+        return ctypes.Structure.__set__(self, "kind", value)
+
+
 class OptionCatchPerformanceAttributes(ctypes.Structure):
     """May optionally hold a value."""
 
@@ -1929,6 +2097,31 @@ class OptionDifficultyAttributes(ctypes.Structure):
         return self._is_some != 0
 
 
+class OptionHitObject(ctypes.Structure):
+    """May optionally hold a value."""
+
+    _fields_ = [
+        ("_t", HitObject),
+        ("_is_some", ctypes.c_uint8),
+    ]
+
+    @property
+    def value(self) -> HitObject:
+        """Returns the value if it exists, or None."""
+        if self._is_some == 1:
+            return self._t
+        else:
+            return None
+
+    def is_some(self) -> bool:
+        """Returns true if the value exists."""
+        return self._is_some == 1
+
+    def is_none(self) -> bool:
+        """Returns true if the value does not exist."""
+        return self._is_some != 0
+
+
 class OptionPerformanceAttributes(ctypes.Structure):
     """May optionally hold a value."""
 
@@ -2075,13 +2268,88 @@ class Beatmap:
         """"""
         return c_lib.beatmap_total_break_time(self._ctx, )
 
-    def mode(self, ) -> ctypes.c_int:
+    def version(self, ) -> int:
         """"""
-        return c_lib.beatmap_mode(self._ctx, )
+        return c_lib.beatmap_version(self._ctx, )
 
     def is_convert(self, ) -> bool:
         """"""
         return c_lib.beatmap_is_convert(self._ctx, )
+
+    def stack_leniency(self, ) -> float:
+        """"""
+        return c_lib.beatmap_stack_leniency(self._ctx, )
+
+    def mode(self, ) -> ctypes.c_int:
+        """"""
+        return c_lib.beatmap_mode(self._ctx, )
+
+    def ar(self, ) -> float:
+        """"""
+        return c_lib.beatmap_ar(self._ctx, )
+
+    def cs(self, ) -> float:
+        """"""
+        return c_lib.beatmap_cs(self._ctx, )
+
+    def hp(self, ) -> float:
+        """"""
+        return c_lib.beatmap_hp(self._ctx, )
+
+    def od(self, ) -> float:
+        """"""
+        return c_lib.beatmap_od(self._ctx, )
+
+    def slider_multiplier(self, ) -> float:
+        """"""
+        return c_lib.beatmap_slider_multiplier(self._ctx, )
+
+    def slider_tick_rate(self, ) -> float:
+        """"""
+        return c_lib.beatmap_slider_tick_rate(self._ctx, )
+
+
+
+class HitObjects:
+    __api_lock = object()
+
+    def __init__(self, api_lock, ctx):
+        assert(api_lock == HitObjects.__api_lock), "You must create this with a static constructor." 
+        self._ctx = ctx
+
+    @property
+    def _as_parameter_(self):
+        return self._ctx
+
+    @staticmethod
+    def new(beatmap: ctypes.c_void_p) -> HitObjects:
+        """"""
+        ctx = ctypes.c_void_p()
+        c_lib.hitobjects_new(ctx, beatmap)
+        self = HitObjects(HitObjects.__api_lock, ctx)
+        return self
+
+    def __del__(self):
+        c_lib.hitobjects_destroy(self._ctx, )
+    def len(self, ) -> int:
+        """"""
+        return c_lib.hitobjects_len(self._ctx, )
+
+    def get(self, index: int) -> OptionHitObject:
+        """"""
+        return c_lib.hitobjects_get(self._ctx, index)
+
+    def next(self, ) -> OptionHitObject:
+        """"""
+        return c_lib.hitobjects_next(self._ctx, )
+
+    def prev(self, ) -> OptionHitObject:
+        """"""
+        return c_lib.hitobjects_prev(self._ctx, )
+
+    def reset(self, ):
+        """"""
+        return c_lib.hitobjects_reset(self._ctx, )
 
 
 

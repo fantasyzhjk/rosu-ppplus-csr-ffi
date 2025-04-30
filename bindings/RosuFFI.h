@@ -13,6 +13,14 @@ extern "C" {
 
 
 
+typedef enum hitobjectkind
+    {
+    HITOBJECTKIND_CIRCLE = 0,
+    HITOBJECTKIND_SLIDER = 1,
+    HITOBJECTKIND_SPINNER = 2,
+    HITOBJECTKIND_HOLD = 3,
+    } hitobjectkind;
+
 typedef enum hitresultpriority
     {
     HITRESULTPRIORITY_BESTCASE = 0,
@@ -51,6 +59,8 @@ typedef struct difficulty difficulty;
 typedef struct gradualdifficulty gradualdifficulty;
 
 typedef struct gradualperformance gradualperformance;
+
+typedef struct hitobjects hitobjects;
 
 typedef struct mods mods;
 
@@ -157,6 +167,14 @@ typedef struct osudifficultyattributes
     uint32_t max_combo;
     } osudifficultyattributes;
 
+typedef struct pos
+    {
+    /// Position on the x-axis.
+    float x;
+    /// Position on the y-axis.
+    float y;
+    } pos;
+
 /// Aggregation for a score's current state.
 typedef struct scorestate
     {
@@ -250,6 +268,14 @@ typedef struct catchperformanceattributes
     /// The final performance points.
     double pp;
     } catchperformanceattributes;
+
+typedef struct hitobjectinfo
+    {
+    hitobjectkind kind;
+    uint32_t repeats;
+    optionf64 expected_dist;
+    double duration;
+    } hitobjectinfo;
 
 /// AR and OD hit windows
 typedef struct hitwindows
@@ -384,6 +410,13 @@ typedef struct difficultyattributes
     mode mode;
     } difficultyattributes;
 
+typedef struct hitobject
+    {
+    pos pos;
+    double start_time;
+    hitobjectinfo kind;
+    } hitobject;
+
 ///Option type containing boolean flag and maybe valid data.
 typedef struct optioncatchperformanceattributes
     {
@@ -437,6 +470,15 @@ typedef struct optiondifficultyattributes
     ///Byte where `1` means element `t` is valid.
     uint8_t is_some;
     } optiondifficultyattributes;
+
+///Option type containing boolean flag and maybe valid data.
+typedef struct optionhitobject
+    {
+    ///Element that is maybe valid.
+    hitobject t;
+    ///Byte where `1` means element `t` is valid.
+    uint8_t is_some;
+    } optionhitobject;
 
 ///Option type containing boolean flag and maybe valid data.
 typedef struct optionperformanceattributes
@@ -499,9 +541,45 @@ double beatmap_bpm(beatmap* context);
 
 double beatmap_total_break_time(beatmap* context);
 
-mode beatmap_mode(beatmap* context);
+int32_t beatmap_version(beatmap* context);
 
 bool beatmap_is_convert(beatmap* context);
+
+float beatmap_stack_leniency(beatmap* context);
+
+mode beatmap_mode(beatmap* context);
+
+float beatmap_ar(beatmap* context);
+
+float beatmap_cs(beatmap* context);
+
+float beatmap_hp(beatmap* context);
+
+float beatmap_od(beatmap* context);
+
+double beatmap_slider_multiplier(beatmap* context);
+
+double beatmap_slider_tick_rate(beatmap* context);
+
+/// Destroys the given instance.
+///
+/// # Safety
+///
+/// The passed parameter MUST have been created with the corresponding init function;
+/// passing any other value results in undefined behavior.
+ffierror hitobjects_destroy(hitobjects** context);
+
+ffierror hitobjects_new(hitobjects** context, const beatmap* beatmap);
+
+uint32_t hitobjects_len(hitobjects* context);
+
+optionhitobject hitobjects_get(hitobjects* context, uint32_t index);
+
+optionhitobject hitobjects_next(hitobjects* context);
+
+optionhitobject hitobjects_prev(hitobjects* context);
+
+void hitobjects_reset(hitobjects* context);
 
 /// Destroys the given instance.
 ///

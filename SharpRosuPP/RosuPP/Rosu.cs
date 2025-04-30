@@ -205,6 +205,14 @@ public partial struct ScoreState
     }
 }
 
+public partial class HitObjects
+{
+    public static HitObjects New(Beatmap beatmap)
+    {
+        return New(beatmap.Context);
+    }
+}
+
 public partial class Difficulty
 {
     public DifficultyAttributes Calculate(Beatmap beatmap)
