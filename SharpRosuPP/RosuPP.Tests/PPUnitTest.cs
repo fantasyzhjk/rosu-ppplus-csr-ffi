@@ -54,10 +54,10 @@ public class PPUnitTest(ITestOutputHelper output)
         var attr2 = osubm.Mods(mods).LoadState(state, dattr).Acc(acc).Calculate();
 
         var pp = mode switch {
-            Mode.Osu => attr.osu.Unwarp().pp,
-            Mode.Taiko => attr.taiko.Unwarp().pp,
-            Mode.Catch => attr.fruit.Unwarp().pp,
-            Mode.Mania => attr.mania.Unwarp().pp,
+            Mode.Osu => attr.osu.Unwrap().pp,
+            Mode.Taiko => attr.taiko.Unwrap().pp,
+            Mode.Catch => attr.fruit.Unwrap().pp,
+            Mode.Mania => attr.mania.Unwrap().pp,
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
         };
 
@@ -80,9 +80,9 @@ public class PPUnitTest(ITestOutputHelper output)
         for (var i = 0; i < calculated; i++) {
             state.n300 += 1;
             state.max_combo += 1;
-            var attrs = gradual.Next(state).Unwarp();
+            var attrs = gradual.Next(state).Unwrap();
             output.WriteLine("{0}", attrs);
-            output.WriteLine("pp: {0}", attrs.osu.Unwarp().pp);
+            output.WriteLine("pp: {0}", attrs.osu.Unwrap().pp);
         }
 
         var remainingObjects = gradual.Len();
@@ -238,7 +238,7 @@ public class PPUnitTest(ITestOutputHelper output)
         performance2.State(state);
         var attr2 = performance.CalculateFromDifficulty(dattr);
 
-        Assert.Equal(attr2.osu.Unwarp().pp, attr.osu.Unwarp().pp);
+        Assert.Equal(attr2.osu.Unwrap().pp, attr.osu.Unwrap().pp);
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public class PPUnitTest(ITestOutputHelper output)
         var attr2 = osubm.CalculateDifficulty();
         
         output.WriteLine("{0}", JsonConvert.SerializeObject(attr2, Formatting.Indented));
-        Assert.Equal(attr2.StarRating, attr.taiko.Unwarp().stars);
+        Assert.Equal(attr2.StarRating, attr.taiko.Unwrap().stars);
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public class PPUnitTest(ITestOutputHelper output)
         var attr2 = osubm.CalculateDifficulty();
         
         output.WriteLine("{0}", JsonConvert.SerializeObject(attr2, Formatting.Indented));
-        Assert.Equal(attr2.StarRating, attr.fruit.Unwarp().stars);
+        Assert.Equal(attr2.StarRating, attr.fruit.Unwrap().stars);
     }
 
     [Fact]
@@ -298,7 +298,7 @@ public class PPUnitTest(ITestOutputHelper output)
         var attr2 = osubm.CalculateDifficulty();
         
         output.WriteLine("{0}", JsonConvert.SerializeObject(attr2, Formatting.Indented));
-        Assert.Equal(attr2.StarRating, attr.mania.Unwarp().stars);
+        Assert.Equal(attr2.StarRating, attr.mania.Unwrap().stars);
     }
 
     [Fact]
