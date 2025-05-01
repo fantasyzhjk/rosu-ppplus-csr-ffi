@@ -269,13 +269,13 @@ typedef struct catchperformanceattributes
     double pp;
     } catchperformanceattributes;
 
-typedef struct hitobjectinfo
+typedef struct hitobjectdata
     {
     hitobjectkind kind;
     uint32_t repeats;
     optionf64 expected_dist;
     double duration;
-    } hitobjectinfo;
+    } hitobjectdata;
 
 /// AR and OD hit windows
 typedef struct hitwindows
@@ -414,7 +414,7 @@ typedef struct hitobject
     {
     pos pos;
     double start_time;
-    hitobjectinfo kind;
+    hitobjectdata data;
     } hitobject;
 
 ///Option type containing boolean flag and maybe valid data.

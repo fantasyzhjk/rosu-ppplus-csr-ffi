@@ -19,7 +19,7 @@ pub enum HitObjectKind {
 #[ffi_type]
 #[repr(C)]
 #[derive(Debug, Clone, Default)]
-pub struct HitObjectInfo {
+pub struct HitObjectData {
     pub kind: HitObjectKind,
     // for slider
     pub repeats: u32,
@@ -28,7 +28,7 @@ pub struct HitObjectInfo {
     pub duration: f64
 }
 
-impl From<&rosu_pp::model::hit_object::HitObjectKind> for HitObjectInfo {
+impl From<&rosu_pp::model::hit_object::HitObjectKind> for HitObjectData {
     fn from(kind: &rosu_pp::model::hit_object::HitObjectKind) -> Self {
         match *kind {
             rosu_pp::model::hit_object::HitObjectKind::Circle => {
@@ -81,7 +81,7 @@ impl From<&rosu_pp::model::hit_object::HitObjectKind> for HitObjectInfo {
 pub struct HitObject {
     pub pos: Pos,
     pub start_time: f64,
-    pub kind: HitObjectInfo
+    pub data: HitObjectData
 }
 
 impl From<&rosu_pp::model::hit_object::HitObject> for HitObject {
@@ -89,7 +89,7 @@ impl From<&rosu_pp::model::hit_object::HitObject> for HitObject {
         Self {
             pos: hit_object.pos.into(),
             start_time: hit_object.start_time,
-            kind: HitObjectInfo::from(&hit_object.kind),
+            data: HitObjectData::from(&hit_object.kind),
         }
     }
 }

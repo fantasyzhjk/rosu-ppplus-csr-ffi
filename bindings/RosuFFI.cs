@@ -874,12 +874,12 @@ namespace RosuPP
     {
         public Pos pos;
         public double start_time;
-        public HitObjectInfo kind;
+        public HitObjectData data;
     }
 
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
-    public partial struct HitObjectInfo
+    public partial struct HitObjectData
     {
         public HitObjectKind kind;
         public uint repeats;

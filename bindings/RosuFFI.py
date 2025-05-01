@@ -1200,7 +1200,7 @@ class CatchPerformanceAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "pp", value)
 
 
-class HitObjectInfo(ctypes.Structure):
+class HitObjectData(ctypes.Structure):
 
     # These fields represent the underlying C data layout
     _fields_ = [
@@ -1872,16 +1872,16 @@ class HitObject(ctypes.Structure):
     _fields_ = [
         ("pos", Pos),
         ("start_time", ctypes.c_double),
-        ("kind", HitObjectInfo),
+        ("data", HitObjectData),
     ]
 
-    def __init__(self, pos: Pos = None, start_time: float = None, kind: HitObjectInfo = None):
+    def __init__(self, pos: Pos = None, start_time: float = None, data: HitObjectData = None):
         if pos is not None:
             self.pos = pos
         if start_time is not None:
             self.start_time = start_time
-        if kind is not None:
-            self.kind = kind
+        if data is not None:
+            self.data = data
 
     @property
     def pos(self) -> Pos:
@@ -1900,12 +1900,12 @@ class HitObject(ctypes.Structure):
         return ctypes.Structure.__set__(self, "start_time", value)
 
     @property
-    def kind(self) -> HitObjectInfo:
-        return ctypes.Structure.__get__(self, "kind")
+    def data(self) -> HitObjectData:
+        return ctypes.Structure.__get__(self, "data")
 
-    @kind.setter
-    def kind(self, value: HitObjectInfo):
-        return ctypes.Structure.__set__(self, "kind", value)
+    @data.setter
+    def data(self, value: HitObjectData):
+        return ctypes.Structure.__set__(self, "data", value)
 
 
 class OptionCatchPerformanceAttributes(ctypes.Structure):

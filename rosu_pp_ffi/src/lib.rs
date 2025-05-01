@@ -34,7 +34,7 @@ pub fn ffi_inventory() -> Inventory {
     InventoryBuilder::new()
         .register(extra_type!(beatmap::pos::Pos))
         .register(extra_type!(beatmap::hitobjects::HitObject))
-        .register(extra_type!(beatmap::hitobjects::HitObjectInfo))
+        .register(extra_type!(beatmap::hitobjects::HitObjectData))
         .register(extra_type!(beatmap::hitobjects::HitObjectKind))
         .register(extra_type!(mode::Mode))
         .register(extra_type!(hitresult_priority::HitResultPriority))
