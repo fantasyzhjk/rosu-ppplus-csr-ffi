@@ -508,12 +508,19 @@ class OsuDifficultyAttributes(ctypes.Structure):
     _fields_ = [
         ("aim", ctypes.c_double),
         ("aim_difficult_slider_count", ctypes.c_double),
+        ("jump", ctypes.c_double),
+        ("flow", ctypes.c_double),
+        ("precision", ctypes.c_double),
         ("speed", ctypes.c_double),
-        ("flashlight", ctypes.c_double),
+        ("stamina", ctypes.c_double),
+        ("accuracy", ctypes.c_double),
         ("slider_factor", ctypes.c_double),
         ("speed_note_count", ctypes.c_double),
         ("aim_difficult_strain_count", ctypes.c_double),
+        ("jump_aim_difficult_strain_count", ctypes.c_double),
+        ("flow_aim_difficult_strain_count", ctypes.c_double),
         ("speed_difficult_strain_count", ctypes.c_double),
+        ("stamina_difficult_strain_count", ctypes.c_double),
         ("ar", ctypes.c_double),
         ("great_hit_window", ctypes.c_double),
         ("ok_hit_window", ctypes.c_double),
@@ -527,23 +534,37 @@ class OsuDifficultyAttributes(ctypes.Structure):
         ("max_combo", ctypes.c_uint32),
     ]
 
-    def __init__(self, aim: float = None, aim_difficult_slider_count: float = None, speed: float = None, flashlight: float = None, slider_factor: float = None, speed_note_count: float = None, aim_difficult_strain_count: float = None, speed_difficult_strain_count: float = None, ar: float = None, great_hit_window: float = None, ok_hit_window: float = None, meh_hit_window: float = None, hp: float = None, n_circles: int = None, n_sliders: int = None, n_large_ticks: int = None, n_spinners: int = None, stars: float = None, max_combo: int = None):
+    def __init__(self, aim: float = None, aim_difficult_slider_count: float = None, jump: float = None, flow: float = None, precision: float = None, speed: float = None, stamina: float = None, accuracy: float = None, slider_factor: float = None, speed_note_count: float = None, aim_difficult_strain_count: float = None, jump_aim_difficult_strain_count: float = None, flow_aim_difficult_strain_count: float = None, speed_difficult_strain_count: float = None, stamina_difficult_strain_count: float = None, ar: float = None, great_hit_window: float = None, ok_hit_window: float = None, meh_hit_window: float = None, hp: float = None, n_circles: int = None, n_sliders: int = None, n_large_ticks: int = None, n_spinners: int = None, stars: float = None, max_combo: int = None):
         if aim is not None:
             self.aim = aim
         if aim_difficult_slider_count is not None:
             self.aim_difficult_slider_count = aim_difficult_slider_count
+        if jump is not None:
+            self.jump = jump
+        if flow is not None:
+            self.flow = flow
+        if precision is not None:
+            self.precision = precision
         if speed is not None:
             self.speed = speed
-        if flashlight is not None:
-            self.flashlight = flashlight
+        if stamina is not None:
+            self.stamina = stamina
+        if accuracy is not None:
+            self.accuracy = accuracy
         if slider_factor is not None:
             self.slider_factor = slider_factor
         if speed_note_count is not None:
             self.speed_note_count = speed_note_count
         if aim_difficult_strain_count is not None:
             self.aim_difficult_strain_count = aim_difficult_strain_count
+        if jump_aim_difficult_strain_count is not None:
+            self.jump_aim_difficult_strain_count = jump_aim_difficult_strain_count
+        if flow_aim_difficult_strain_count is not None:
+            self.flow_aim_difficult_strain_count = flow_aim_difficult_strain_count
         if speed_difficult_strain_count is not None:
             self.speed_difficult_strain_count = speed_difficult_strain_count
+        if stamina_difficult_strain_count is not None:
+            self.stamina_difficult_strain_count = stamina_difficult_strain_count
         if ar is not None:
             self.ar = ar
         if great_hit_window is not None:
@@ -588,6 +609,36 @@ class OsuDifficultyAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "aim_difficult_slider_count", value)
 
     @property
+    def jump(self) -> float:
+        """ The difficulty of the jump skill."""
+        return ctypes.Structure.__get__(self, "jump")
+
+    @jump.setter
+    def jump(self, value: float):
+        """ The difficulty of the jump skill."""
+        return ctypes.Structure.__set__(self, "jump", value)
+
+    @property
+    def flow(self) -> float:
+        """ The difficulty of the flow skill."""
+        return ctypes.Structure.__get__(self, "flow")
+
+    @flow.setter
+    def flow(self, value: float):
+        """ The difficulty of the flow skill."""
+        return ctypes.Structure.__set__(self, "flow", value)
+
+    @property
+    def precision(self) -> float:
+        """ The difficulty of the precision skill."""
+        return ctypes.Structure.__get__(self, "precision")
+
+    @precision.setter
+    def precision(self, value: float):
+        """ The difficulty of the precision skill."""
+        return ctypes.Structure.__set__(self, "precision", value)
+
+    @property
     def speed(self) -> float:
         """ The difficulty of the speed skill."""
         return ctypes.Structure.__get__(self, "speed")
@@ -598,14 +649,24 @@ class OsuDifficultyAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "speed", value)
 
     @property
-    def flashlight(self) -> float:
-        """ The difficulty of the flashlight skill."""
-        return ctypes.Structure.__get__(self, "flashlight")
+    def stamina(self) -> float:
+        """ The difficulty of the stamina skill."""
+        return ctypes.Structure.__get__(self, "stamina")
 
-    @flashlight.setter
-    def flashlight(self, value: float):
-        """ The difficulty of the flashlight skill."""
-        return ctypes.Structure.__set__(self, "flashlight", value)
+    @stamina.setter
+    def stamina(self, value: float):
+        """ The difficulty of the stamina skill."""
+        return ctypes.Structure.__set__(self, "stamina", value)
+
+    @property
+    def accuracy(self) -> float:
+        """ The difficulty of the accuracy skill."""
+        return ctypes.Structure.__get__(self, "accuracy")
+
+    @accuracy.setter
+    def accuracy(self, value: float):
+        """ The difficulty of the accuracy skill."""
+        return ctypes.Structure.__set__(self, "accuracy", value)
 
     @property
     def slider_factor(self) -> float:
@@ -638,6 +699,26 @@ class OsuDifficultyAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "aim_difficult_strain_count", value)
 
     @property
+    def jump_aim_difficult_strain_count(self) -> float:
+        """ Weighted sum of jump aim strains."""
+        return ctypes.Structure.__get__(self, "jump_aim_difficult_strain_count")
+
+    @jump_aim_difficult_strain_count.setter
+    def jump_aim_difficult_strain_count(self, value: float):
+        """ Weighted sum of jump aim strains."""
+        return ctypes.Structure.__set__(self, "jump_aim_difficult_strain_count", value)
+
+    @property
+    def flow_aim_difficult_strain_count(self) -> float:
+        """ Weighted sum of flow aim strains."""
+        return ctypes.Structure.__get__(self, "flow_aim_difficult_strain_count")
+
+    @flow_aim_difficult_strain_count.setter
+    def flow_aim_difficult_strain_count(self, value: float):
+        """ Weighted sum of flow aim strains."""
+        return ctypes.Structure.__set__(self, "flow_aim_difficult_strain_count", value)
+
+    @property
     def speed_difficult_strain_count(self) -> float:
         """ Weighted sum of speed strains."""
         return ctypes.Structure.__get__(self, "speed_difficult_strain_count")
@@ -646,6 +727,16 @@ class OsuDifficultyAttributes(ctypes.Structure):
     def speed_difficult_strain_count(self, value: float):
         """ Weighted sum of speed strains."""
         return ctypes.Structure.__set__(self, "speed_difficult_strain_count", value)
+
+    @property
+    def stamina_difficult_strain_count(self) -> float:
+        """ Weighted sum of stamina strains."""
+        return ctypes.Structure.__get__(self, "stamina_difficult_strain_count")
+
+    @stamina_difficult_strain_count.setter
+    def stamina_difficult_strain_count(self, value: float):
+        """ Weighted sum of stamina strains."""
+        return ctypes.Structure.__set__(self, "stamina_difficult_strain_count", value)
 
     @property
     def ar(self) -> float:
@@ -689,12 +780,12 @@ class OsuDifficultyAttributes(ctypes.Structure):
 
     @property
     def hp(self) -> float:
-        """ The overall difficulty"""
+        """ The health drain rate."""
         return ctypes.Structure.__get__(self, "hp")
 
     @hp.setter
     def hp(self, value: float):
-        """ The overall difficulty"""
+        """ The health drain rate."""
         return ctypes.Structure.__set__(self, "hp", value)
 
     @property
@@ -723,10 +814,10 @@ class OsuDifficultyAttributes(ctypes.Structure):
 
  The meaning depends on the kind of score:
  - if set on osu!stable, this value is irrelevant
- - if set on osu!lazer *without* `CL`, this value is the amount of
-   slider ticks and repeats
- - if set on osu!lazer *with* `CL`, this value is the amount of slider
-   heads, ticks, and repeats"""
+ - if set on osu!lazer *with* slider accuracy, this value is the amount
+   of hit slider ticks and repeats
+ - if set on osu!lazer *without* slider accuracy, this value is the
+   amount of hit slider heads, ticks, and repeats"""
         return ctypes.Structure.__get__(self, "n_large_ticks")
 
     @n_large_ticks.setter
@@ -735,10 +826,10 @@ class OsuDifficultyAttributes(ctypes.Structure):
 
  The meaning depends on the kind of score:
  - if set on osu!stable, this value is irrelevant
- - if set on osu!lazer *without* `CL`, this value is the amount of
-   slider ticks and repeats
- - if set on osu!lazer *with* `CL`, this value is the amount of slider
-   heads, ticks, and repeats"""
+ - if set on osu!lazer *with* slider accuracy, this value is the amount
+   of hit slider ticks and repeats
+ - if set on osu!lazer *without* slider accuracy, this value is the
+   amount of hit slider heads, ticks, and repeats"""
         return ctypes.Structure.__set__(self, "n_large_ticks", value)
 
     @property
@@ -1362,31 +1453,37 @@ class OsuPerformanceAttributes(ctypes.Structure):
     _fields_ = [
         ("difficulty", OsuDifficultyAttributes),
         ("pp", ctypes.c_double),
-        ("pp_acc", ctypes.c_double),
         ("pp_aim", ctypes.c_double),
-        ("pp_flashlight", ctypes.c_double),
+        ("pp_jump_aim", ctypes.c_double),
+        ("pp_flow_aim", ctypes.c_double),
+        ("pp_precision", ctypes.c_double),
         ("pp_speed", ctypes.c_double),
+        ("pp_stamina", ctypes.c_double),
+        ("pp_acc", ctypes.c_double),
         ("effective_miss_count", ctypes.c_double),
-        ("speed_deviation", Optionf64),
     ]
 
-    def __init__(self, difficulty: OsuDifficultyAttributes = None, pp: float = None, pp_acc: float = None, pp_aim: float = None, pp_flashlight: float = None, pp_speed: float = None, effective_miss_count: float = None, speed_deviation: Optionf64 = None):
+    def __init__(self, difficulty: OsuDifficultyAttributes = None, pp: float = None, pp_aim: float = None, pp_jump_aim: float = None, pp_flow_aim: float = None, pp_precision: float = None, pp_speed: float = None, pp_stamina: float = None, pp_acc: float = None, effective_miss_count: float = None):
         if difficulty is not None:
             self.difficulty = difficulty
         if pp is not None:
             self.pp = pp
-        if pp_acc is not None:
-            self.pp_acc = pp_acc
         if pp_aim is not None:
             self.pp_aim = pp_aim
-        if pp_flashlight is not None:
-            self.pp_flashlight = pp_flashlight
+        if pp_jump_aim is not None:
+            self.pp_jump_aim = pp_jump_aim
+        if pp_flow_aim is not None:
+            self.pp_flow_aim = pp_flow_aim
+        if pp_precision is not None:
+            self.pp_precision = pp_precision
         if pp_speed is not None:
             self.pp_speed = pp_speed
+        if pp_stamina is not None:
+            self.pp_stamina = pp_stamina
+        if pp_acc is not None:
+            self.pp_acc = pp_acc
         if effective_miss_count is not None:
             self.effective_miss_count = effective_miss_count
-        if speed_deviation is not None:
-            self.speed_deviation = speed_deviation
 
     @property
     def difficulty(self) -> OsuDifficultyAttributes:
@@ -1409,16 +1506,6 @@ class OsuPerformanceAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "pp", value)
 
     @property
-    def pp_acc(self) -> float:
-        """ The accuracy portion of the final pp."""
-        return ctypes.Structure.__get__(self, "pp_acc")
-
-    @pp_acc.setter
-    def pp_acc(self, value: float):
-        """ The accuracy portion of the final pp."""
-        return ctypes.Structure.__set__(self, "pp_acc", value)
-
-    @property
     def pp_aim(self) -> float:
         """ The aim portion of the final pp."""
         return ctypes.Structure.__get__(self, "pp_aim")
@@ -1429,14 +1516,34 @@ class OsuPerformanceAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "pp_aim", value)
 
     @property
-    def pp_flashlight(self) -> float:
-        """ The flashlight portion of the final pp."""
-        return ctypes.Structure.__get__(self, "pp_flashlight")
+    def pp_jump_aim(self) -> float:
+        """ The jump aim portion of the final pp."""
+        return ctypes.Structure.__get__(self, "pp_jump_aim")
 
-    @pp_flashlight.setter
-    def pp_flashlight(self, value: float):
-        """ The flashlight portion of the final pp."""
-        return ctypes.Structure.__set__(self, "pp_flashlight", value)
+    @pp_jump_aim.setter
+    def pp_jump_aim(self, value: float):
+        """ The jump aim portion of the final pp."""
+        return ctypes.Structure.__set__(self, "pp_jump_aim", value)
+
+    @property
+    def pp_flow_aim(self) -> float:
+        """ The flow aim portion of the final pp."""
+        return ctypes.Structure.__get__(self, "pp_flow_aim")
+
+    @pp_flow_aim.setter
+    def pp_flow_aim(self, value: float):
+        """ The flow aim portion of the final pp."""
+        return ctypes.Structure.__set__(self, "pp_flow_aim", value)
+
+    @property
+    def pp_precision(self) -> float:
+        """ The precision portion of the final pp."""
+        return ctypes.Structure.__get__(self, "pp_precision")
+
+    @pp_precision.setter
+    def pp_precision(self, value: float):
+        """ The precision portion of the final pp."""
+        return ctypes.Structure.__set__(self, "pp_precision", value)
 
     @property
     def pp_speed(self) -> float:
@@ -1449,6 +1556,26 @@ class OsuPerformanceAttributes(ctypes.Structure):
         return ctypes.Structure.__set__(self, "pp_speed", value)
 
     @property
+    def pp_stamina(self) -> float:
+        """ The stamina portion of the final pp."""
+        return ctypes.Structure.__get__(self, "pp_stamina")
+
+    @pp_stamina.setter
+    def pp_stamina(self, value: float):
+        """ The stamina portion of the final pp."""
+        return ctypes.Structure.__set__(self, "pp_stamina", value)
+
+    @property
+    def pp_acc(self) -> float:
+        """ The acc portion of the final pp."""
+        return ctypes.Structure.__get__(self, "pp_acc")
+
+    @pp_acc.setter
+    def pp_acc(self, value: float):
+        """ The acc portion of the final pp."""
+        return ctypes.Structure.__set__(self, "pp_acc", value)
+
+    @property
     def effective_miss_count(self) -> float:
         """ Misses including an approximated amount of slider breaks"""
         return ctypes.Structure.__get__(self, "effective_miss_count")
@@ -1457,16 +1584,6 @@ class OsuPerformanceAttributes(ctypes.Structure):
     def effective_miss_count(self, value: float):
         """ Misses including an approximated amount of slider breaks"""
         return ctypes.Structure.__set__(self, "effective_miss_count", value)
-
-    @property
-    def speed_deviation(self) -> Optionf64:
-        """ Approximated unstable-rate"""
-        return ctypes.Structure.__get__(self, "speed_deviation")
-
-    @speed_deviation.setter
-    def speed_deviation(self, value: Optionf64):
-        """ Approximated unstable-rate"""
-        return ctypes.Structure.__set__(self, "speed_deviation", value)
 
 
 class TaikoPerformanceAttributes(ctypes.Structure):

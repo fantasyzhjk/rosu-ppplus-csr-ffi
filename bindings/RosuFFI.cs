@@ -944,18 +944,32 @@ namespace RosuPP
         public double aim;
         /// The number of sliders weighted by difficulty.
         public double aim_difficult_slider_count;
+        /// The difficulty of the jump skill.
+        public double jump;
+        /// The difficulty of the flow skill.
+        public double flow;
+        /// The difficulty of the precision skill.
+        public double precision;
         /// The difficulty of the speed skill.
         public double speed;
-        /// The difficulty of the flashlight skill.
-        public double flashlight;
+        /// The difficulty of the stamina skill.
+        public double stamina;
+        /// The difficulty of the accuracy skill.
+        public double accuracy;
         /// The ratio of the aim strain with and without considering sliders
         public double slider_factor;
         /// The number of clickable objects weighted by difficulty.
         public double speed_note_count;
         /// Weighted sum of aim strains.
         public double aim_difficult_strain_count;
+        /// Weighted sum of jump aim strains.
+        public double jump_aim_difficult_strain_count;
+        /// Weighted sum of flow aim strains.
+        public double flow_aim_difficult_strain_count;
         /// Weighted sum of speed strains.
         public double speed_difficult_strain_count;
+        /// Weighted sum of stamina strains.
+        public double stamina_difficult_strain_count;
         /// The approach rate.
         public double ar;
         /// The great hit window.
@@ -964,7 +978,7 @@ namespace RosuPP
         public double ok_hit_window;
         /// The meh hit window.
         public double meh_hit_window;
-        /// The overall difficulty
+        /// The health drain rate.
         public double hp;
         /// The amount of circles.
         public uint n_circles;
@@ -974,10 +988,10 @@ namespace RosuPP
         ///
         /// The meaning depends on the kind of score:
         /// - if set on osu!stable, this value is irrelevant
-        /// - if set on osu!lazer *without* `CL`, this value is the amount of
-        ///   slider ticks and repeats
-        /// - if set on osu!lazer *with* `CL`, this value is the amount of slider
-        ///   heads, ticks, and repeats
+        /// - if set on osu!lazer *with* slider accuracy, this value is the amount
+        ///   of hit slider ticks and repeats
+        /// - if set on osu!lazer *without* slider accuracy, this value is the
+        ///   amount of hit slider heads, ticks, and repeats
         public uint n_large_ticks;
         /// The amount of spinners.
         public uint n_spinners;
@@ -996,18 +1010,22 @@ namespace RosuPP
         public OsuDifficultyAttributes difficulty;
         /// The final performance points.
         public double pp;
-        /// The accuracy portion of the final pp.
-        public double pp_acc;
         /// The aim portion of the final pp.
         public double pp_aim;
-        /// The flashlight portion of the final pp.
-        public double pp_flashlight;
+        /// The jump aim portion of the final pp.
+        public double pp_jump_aim;
+        /// The flow aim portion of the final pp.
+        public double pp_flow_aim;
+        /// The precision portion of the final pp.
+        public double pp_precision;
         /// The speed portion of the final pp.
         public double pp_speed;
+        /// The stamina portion of the final pp.
+        public double pp_stamina;
+        /// The acc portion of the final pp.
+        public double pp_acc;
         /// Misses including an approximated amount of slider breaks
         public double effective_miss_count;
-        /// Approximated unstable-rate
-        public Optionf64 speed_deviation;
     }
 
     [Serializable]

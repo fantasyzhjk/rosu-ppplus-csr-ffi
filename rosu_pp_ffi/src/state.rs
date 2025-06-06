@@ -146,7 +146,7 @@ impl From<ScoreState> for rosu_pp::any::ScoreState {
 #[ffi_function]
 #[no_mangle]
 pub extern "C" fn debug_score_state(res: &ScoreState, str: &mut OwnedString) {
-    str.replace(format!("{:#?}", res))
+    str.replace(format!("{res:#?}"))
 }
 
 

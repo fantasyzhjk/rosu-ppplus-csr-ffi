@@ -124,18 +124,32 @@ typedef struct osudifficultyattributes
     double aim;
     /// The number of sliders weighted by difficulty.
     double aim_difficult_slider_count;
+    /// The difficulty of the jump skill.
+    double jump;
+    /// The difficulty of the flow skill.
+    double flow;
+    /// The difficulty of the precision skill.
+    double precision;
     /// The difficulty of the speed skill.
     double speed;
-    /// The difficulty of the flashlight skill.
-    double flashlight;
+    /// The difficulty of the stamina skill.
+    double stamina;
+    /// The difficulty of the accuracy skill.
+    double accuracy;
     /// The ratio of the aim strain with and without considering sliders
     double slider_factor;
     /// The number of clickable objects weighted by difficulty.
     double speed_note_count;
     /// Weighted sum of aim strains.
     double aim_difficult_strain_count;
+    /// Weighted sum of jump aim strains.
+    double jump_aim_difficult_strain_count;
+    /// Weighted sum of flow aim strains.
+    double flow_aim_difficult_strain_count;
     /// Weighted sum of speed strains.
     double speed_difficult_strain_count;
+    /// Weighted sum of stamina strains.
+    double stamina_difficult_strain_count;
     /// The approach rate.
     double ar;
     /// The great hit window.
@@ -144,7 +158,7 @@ typedef struct osudifficultyattributes
     double ok_hit_window;
     /// The meh hit window.
     double meh_hit_window;
-    /// The overall difficulty
+    /// The health drain rate.
     double hp;
     /// The amount of circles.
     uint32_t n_circles;
@@ -154,10 +168,10 @@ typedef struct osudifficultyattributes
     ///
     /// The meaning depends on the kind of score:
     /// - if set on osu!stable, this value is irrelevant
-    /// - if set on osu!lazer *without* `CL`, this value is the amount of
-    ///   slider ticks and repeats
-    /// - if set on osu!lazer *with* `CL`, this value is the amount of slider
-    ///   heads, ticks, and repeats
+    /// - if set on osu!lazer *with* slider accuracy, this value is the amount
+    ///   of hit slider ticks and repeats
+    /// - if set on osu!lazer *without* slider accuracy, this value is the
+    ///   amount of hit slider heads, ticks, and repeats
     uint32_t n_large_ticks;
     /// The amount of spinners.
     uint32_t n_spinners;
@@ -308,18 +322,22 @@ typedef struct osuperformanceattributes
     osudifficultyattributes difficulty;
     /// The final performance points.
     double pp;
-    /// The accuracy portion of the final pp.
-    double pp_acc;
     /// The aim portion of the final pp.
     double pp_aim;
-    /// The flashlight portion of the final pp.
-    double pp_flashlight;
+    /// The jump aim portion of the final pp.
+    double pp_jump_aim;
+    /// The flow aim portion of the final pp.
+    double pp_flow_aim;
+    /// The precision portion of the final pp.
+    double pp_precision;
     /// The speed portion of the final pp.
     double pp_speed;
+    /// The stamina portion of the final pp.
+    double pp_stamina;
+    /// The acc portion of the final pp.
+    double pp_acc;
     /// Misses including an approximated amount of slider breaks
     double effective_miss_count;
-    /// Approximated unstable-rate
-    optionf64 speed_deviation;
     } osuperformanceattributes;
 
 /// The result of a performance calculation on an osu!taiko map.

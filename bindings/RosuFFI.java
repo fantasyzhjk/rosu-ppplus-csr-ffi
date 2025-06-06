@@ -459,6 +459,10 @@ public class RosuFFI {
             public Optional<Double> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
             }
+
+            public double unwrap() {
+                return toOptional().orElseThrow();
+            }
         }
 
         @Structure.FieldOrder({"t", "is_some"})
@@ -471,6 +475,10 @@ public class RosuFFI {
 
             public Optional<DifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
+            }
+
+            public DifficultyAttributes unwrap() {
+                return toOptional().orElseThrow();
             }
         }
 
@@ -485,54 +493,68 @@ public class RosuFFI {
             public Optional<PerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
             }
+
+            public PerformanceAttributes unwrap() {
+                return toOptional().orElseThrow();
+            }
         }
 
-        @Structure.FieldOrder({ "aim", "aim_difficult_slider_count", "speed", "flashlight", "slider_factor",
-                "speed_note_count", "aim_difficult_strain_count", "speed_difficult_strain_count",
-                "ar", "great_hit_window", "ok_hit_window", "meh_hit_window", "hp",
-                "n_circles", "n_sliders", "n_large_ticks", "n_spinners",
-                "stars", "max_combo" })
+        @Structure.FieldOrder({ "aim", "aim_difficult_slider_count", "jump", "flow", "precision", 
+                "speed", "stamina", "accuracy", "slider_factor", "speed_note_count", 
+                "aim_difficult_strain_count", "jump_aim_difficult_strain_count", 
+                "flow_aim_difficult_strain_count", "speed_difficult_strain_count", 
+                "stamina_difficult_strain_count", "ar", "great_hit_window", "ok_hit_window", 
+                "meh_hit_window", "hp", "n_circles", "n_sliders", "n_large_ticks", 
+                "n_spinners", "stars", "max_combo" })
         public static class OsuDifficultyAttributes extends Structure {
-            public double aim;                           // Difficulty of the aim skill
-            public double aim_difficult_slider_count;    // The number of sliders weighted by difficulty.
-            public double speed;                         // Difficulty of the speed skill
-            public double flashlight;                   // Difficulty of the flashlight skill
-            public double slider_factor;                // Ratio of aim strain with/without sliders
-            public double speed_note_count;             // Number of clickable objects weighted by difficulty
-            public double aim_difficult_strain_count;   // Weighted sum of aim strains
-            public double speed_difficult_strain_count; // Weighted sum of speed strains
-            public double ar;                           // Approach rate
-            public double great_hit_window;             // great hit window.
-            public double ok_hit_window;                // ok hit window.
-            public double meh_hit_window;               // meh hit window.
-            public double hp;                           // Health drain rate
-            public int n_circles;                       // Number of circles (unsigned int -> int)
-            public int n_sliders;                       // Number of sliders (unsigned int -> int)
-            public int n_large_ticks;                  // Number of slider ticks and repeat points (unsigned int -> int)
-            public int n_spinners;                      // Number of spinners (unsigned int -> int)
-            public double stars;                        // Final star rating
-            public int max_combo;                       // Maximum combo (unsigned int -> int)
-
+            public double aim;                                  // The difficulty of the aim skill
+            public double aim_difficult_slider_count;           // The number of sliders weighted by difficulty
+            public double jump;                                 // The difficulty of the jump skill
+            public double flow;                                 // The difficulty of the flow skill
+            public double precision;                            // The difficulty of the precision skill
+            public double speed;                                // The difficulty of the speed skill
+            public double stamina;                              // The difficulty of the stamina skill
+            public double accuracy;                             // The difficulty of the accuracy skill
+            public double slider_factor;                        // The ratio of the aim strain with and without considering sliders
+            public double speed_note_count;                     // The number of clickable objects weighted by difficulty
+            public double aim_difficult_strain_count;           // Weighted sum of aim strains
+            public double jump_aim_difficult_strain_count;      // Weighted sum of jump aim strains
+            public double flow_aim_difficult_strain_count;      // Weighted sum of flow aim strains
+            public double speed_difficult_strain_count;         // Weighted sum of speed strains
+            public double stamina_difficult_strain_count;       // Weighted sum of stamina strains
+            public double ar;                                   // The approach rate
+            public double great_hit_window;                     // The great hit window
+            public double ok_hit_window;                        // The ok hit window
+            public double meh_hit_window;                       // The meh hit window
+            public double hp;                                   // The health drain rate
+            public int n_circles;                               // The amount of circles (uint -> int)
+            public int n_sliders;                               // The amount of sliders (uint -> int)
+            public int n_large_ticks;                           // The amount of "large ticks" (uint -> int)
+            public int n_spinners;                              // The amount of spinners (uint -> int)
+            public double stars;                                // The final star rating
+            public int max_combo;                               // The maximum combo (uint -> int)
+        
             public static class ByReference extends OsuDifficultyAttributes implements Structure.ByReference {}
             public static class ByValue extends OsuDifficultyAttributes implements Structure.ByValue {}
         }
-
-        @Structure.FieldOrder({ "difficulty", "pp", "pp_acc", "pp_aim",
-                "pp_flashlight", "pp_speed", "effective_miss_count", "speed_deviation" })
+        
+        @Structure.FieldOrder({ "difficulty", "pp", "pp_aim", "pp_jump_aim", "pp_flow_aim", 
+                "pp_precision", "pp_speed", "pp_stamina", "pp_acc", "effective_miss_count" })
         public static class OsuPerformanceAttributes extends Structure {
-            public OsuDifficultyAttributes difficulty; // Nested structure for difficulty attributes
-            public double pp;                          // Final performance points
-            public double pp_acc;                      // Accuracy portion of the final pp
-            public double pp_aim;                      // Aim portion of the final pp
-            public double pp_flashlight;               // Flashlight portion of the final pp
-            public double pp_speed;                    // Speed portion of the final pp
-            public double effective_miss_count;        // Misses including approximated slider breaks
-            public Optionf64 speed_deviation;          // Approximated unstable-rate
-
+            public OsuDifficultyAttributes difficulty;          // The difficulty attributes that were used for the performance calculation
+            public double pp;                                   // The final performance points
+            public double pp_aim;                               // The aim portion of the final pp
+            public double pp_jump_aim;                          // The jump aim portion of the final pp
+            public double pp_flow_aim;                          // The flow aim portion of the final pp
+            public double pp_precision;                         // The precision portion of the final pp
+            public double pp_speed;                             // The speed portion of the final pp
+            public double pp_stamina;                           // The stamina portion of the final pp
+            public double pp_acc;                               // The acc portion of the final pp
+            public double effective_miss_count;                 // Misses including an approximated amount of slider breaks
+        
             public static class ByReference extends OsuPerformanceAttributes implements Structure.ByReference {}
             public static class ByValue extends OsuPerformanceAttributes implements Structure.ByValue {}
         }
-
         @Structure.FieldOrder({ "stamina", "rhythm", "color", "reading",
                 "great_hit_window", "ok_hit_window", "mono_stamina_factor",
                 "stars", "max_combo", "is_convert" })
@@ -621,6 +643,10 @@ public class RosuFFI {
             public Optional<OsuDifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
             }
+
+            public OsuDifficultyAttributes unwrap() {
+                return toOptional().orElseThrow();
+            }
         }
 
         @Structure.FieldOrder({ "t", "is_some" })
@@ -633,6 +659,10 @@ public class RosuFFI {
 
             public Optional<TaikoDifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
+            }
+
+            public TaikoDifficultyAttributes unwrap() {
+                return toOptional().orElseThrow();
             }
         }
 
@@ -647,6 +677,10 @@ public class RosuFFI {
             public Optional<CatchDifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
             }
+
+            public CatchDifficultyAttributes unwrap() {
+                return toOptional().orElseThrow();
+            }
         }
 
         @Structure.FieldOrder({ "t", "is_some" })
@@ -659,6 +693,10 @@ public class RosuFFI {
 
             public Optional<ManiaDifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
+            }
+
+            public ManiaDifficultyAttributes unwrap() {
+                return toOptional().orElseThrow();
             }
         }
 
@@ -685,6 +723,10 @@ public class RosuFFI {
             public Optional<OsuPerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
             }
+
+            public OsuPerformanceAttributes unwrap() {
+                return toOptional().orElseThrow();
+            }
         }
 
         @Structure.FieldOrder({ "t", "is_some" })
@@ -697,6 +739,10 @@ public class RosuFFI {
 
             public Optional<TaikoPerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
+            }
+
+            public TaikoPerformanceAttributes unwrap() {
+                return toOptional().orElseThrow();
             }
         }
 
@@ -711,6 +757,10 @@ public class RosuFFI {
             public Optional<CatchPerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
             }
+
+            public CatchPerformanceAttributes unwrap() {
+                return toOptional().orElseThrow();
+            }
         }
 
         @Structure.FieldOrder({ "t", "is_some" })
@@ -723,6 +773,10 @@ public class RosuFFI {
 
             public Optional<ManiaPerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
+            }
+
+            public ManiaPerformanceAttributes unwrap() {
+                return toOptional().orElseThrow();
             }
         }
 
