@@ -153,6 +153,18 @@ namespace RosuPP
             }
         }
 
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "beatmap_from_clone")]
+        public static extern FFIError beatmap_from_clone(ref IntPtr context, IntPtr beatmap);
+
+        public static void beatmap_from_clone_checked(ref IntPtr context, IntPtr beatmap)
+        {
+            var rval = beatmap_from_clone(ref context, beatmap);;
+            if (rval != FFIError.Ok)
+            {
+                throw new InteropException<FFIError>(rval);
+            }
+        }
+
         /// Convert a Beatmap to the specified mode
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "beatmap_convert")]
         public static extern bool beatmap_convert(IntPtr context, Mode mode, IntPtr mods);
@@ -192,6 +204,15 @@ namespace RosuPP
 
         [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "beatmap_slider_tick_rate")]
         public static extern double beatmap_slider_tick_rate(IntPtr context);
+
+        /// Check whether hitobjects appear too suspicious for further calculation.
+        ///
+        /// Sometimes a [`Beatmap`] isn't created for gameplay but rather to test
+        /// the limits of osu! itself. Difficulty- and/or performance calculation
+        /// should likely be avoided on these maps due to potential performance
+        /// issues.
+        [DllImport(NativeLib, CallingConvention = CallingConvention.Cdecl, EntryPoint = "beatmap_check_suspicion")]
+        public static extern OptionTooSuspicious beatmap_check_suspicion(IntPtr context);
 
         /// Destroys the given instance.
         ///
@@ -780,6 +801,7 @@ namespace RosuPP
     {
         BestCase = 0,
         WorstCase = 1,
+        Fastest = 2,
     }
 
     public enum Mode
@@ -803,6 +825,22 @@ namespace RosuPP
         WithSliderAcc = 1,
         /// For scores set on osu!lazer without slider accuracy
         WithoutSliderAcc = 2,
+    }
+
+    public enum TooSuspicious
+    {
+        /// Notes are too dense time-wise.
+        Density = 0,
+        /// The map seems too long.
+        Length = 1,
+        /// Too many objects.
+        ObjectCount = 2,
+        /// General red flag.
+        RedFlag = 3,
+        /// Too many sliders' positions were suspicious.
+        SliderPositions = 4,
+        /// Too many sliders had a very high amount of repeats.
+        SliderRepeats = 5,
     }
 
     /// Summary struct for a [`Beatmap`]'s attributes.
@@ -1601,6 +1639,38 @@ namespace RosuPP
     ///Option type containing boolean flag and maybe valid data.
     [Serializable]
     [StructLayout(LayoutKind.Sequential)]
+    public partial struct OptionTooSuspicious
+    {
+        ///Element that is maybe valid.
+        TooSuspicious t;
+        ///Byte where `1` means element `t` is valid.
+        byte is_some;
+    }
+
+    public partial struct OptionTooSuspicious
+    {
+        public static OptionTooSuspicious FromNullable(TooSuspicious? nullable)
+        {
+            var result = new OptionTooSuspicious();
+            if (nullable.HasValue)
+            {
+                result.is_some = 1;
+                result.t = nullable.Value;
+            }
+
+            return result;
+        }
+
+        public TooSuspicious? ToNullable()
+        {
+            return this.is_some == 1 ? this.t : (TooSuspicious?)null;
+        }
+    }
+
+
+    ///Option type containing boolean flag and maybe valid data.
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential)]
     public partial struct Optionf64
     {
         ///Element that is maybe valid.
@@ -1748,6 +1818,17 @@ namespace RosuPP
             return self;
         }
 
+        public static Beatmap FromClone(IntPtr beatmap)
+        {
+            var self = new Beatmap();
+            var rval = RosuLibrary.beatmap_from_clone(ref self._context, beatmap);
+            if (rval != FFIError.Ok)
+            {
+                throw new InteropException<FFIError>(rval);
+            }
+            return self;
+        }
+
         public void Dispose()
         {
             var rval = RosuLibrary.beatmap_destroy(ref _context);
@@ -1821,6 +1902,17 @@ namespace RosuPP
         public double SliderTickRate()
         {
             return RosuLibrary.beatmap_slider_tick_rate(_context);
+        }
+
+        /// Check whether hitobjects appear too suspicious for further calculation.
+        ///
+        /// Sometimes a [`Beatmap`] isn't created for gameplay but rather to test
+        /// the limits of osu! itself. Difficulty- and/or performance calculation
+        /// should likely be avoided on these maps due to potential performance
+        /// issues.
+        public OptionTooSuspicious CheckSuspicion()
+        {
+            return RosuLibrary.beatmap_check_suspicion(_context);
         }
 
         public IntPtr Context => _context;

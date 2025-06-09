@@ -1,4 +1,4 @@
-use interoptopus::{ffi_type, patterns::option::FFIOption};
+use interoptopus::ffi_type;
 
 /// The result of a difficulty calculation on an osu!standard map.
 #[derive(Clone, Debug, Default, PartialEq)]

@@ -1,14 +1,16 @@
 pub mod attributes;
 pub mod hitobjects;
 pub mod pos;
+pub mod too_suspicious;
 
 use crate::*;
 use interoptopus::{
-    ffi_service, ffi_service_ctor, ffi_service_method, ffi_type, patterns::{slice::FFISlice, string::AsciiPointer}
+    ffi_service, ffi_service_ctor, ffi_service_method, ffi_type, patterns::{slice::FFISlice, string::AsciiPointer, option::FFIOption}
 };
 use mode::Mode;
 use mods::Mods;
 use rosu_pp::GameMods;
+use too_suspicious::TooSuspicious;
 
 #[ffi_type(opaque)]
 #[derive(Default)]
@@ -32,6 +34,13 @@ impl Beatmap {
             inner: rosu_pp::Beatmap::from_path(
                 path.as_str()?,
             )?,
+        })
+    }
+
+    #[ffi_service_ctor]
+    pub fn from_clone(beatmap: &Beatmap) -> Result<Self, Error> {
+        Ok(Self {
+            inner: beatmap.inner.clone(),
         })
     }
 
@@ -101,5 +110,16 @@ impl Beatmap {
     #[ffi_service_method(on_panic = "undefined_behavior")]
     pub fn slider_tick_rate(&mut self) -> f64 {
         self.inner.slider_tick_rate
+    }
+
+    /// Check whether hitobjects appear too suspicious for further calculation.
+    ///
+    /// Sometimes a [`Beatmap`] isn't created for gameplay but rather to test
+    /// the limits of osu! itself. Difficulty- and/or performance calculation
+    /// should likely be avoided on these maps due to potential performance
+    /// issues.
+    #[ffi_service_method(on_panic = "undefined_behavior")]
+    pub fn check_suspicion(&mut self) -> FFIOption<TooSuspicious> {
+        self.inner.check_suspicion().map_err(Into::into).err().into()
     }
 }

@@ -26,6 +26,7 @@ def init_lib(path):
     c_lib.beatmap_destroy.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
     c_lib.beatmap_from_bytes.argtypes = [ctypes.POINTER(ctypes.c_void_p), Sliceu8]
     c_lib.beatmap_from_path.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_char)]
+    c_lib.beatmap_from_clone.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p]
     c_lib.beatmap_convert.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
     c_lib.beatmap_bpm.argtypes = [ctypes.c_void_p]
     c_lib.beatmap_total_break_time.argtypes = [ctypes.c_void_p]
@@ -39,6 +40,7 @@ def init_lib(path):
     c_lib.beatmap_od.argtypes = [ctypes.c_void_p]
     c_lib.beatmap_slider_multiplier.argtypes = [ctypes.c_void_p]
     c_lib.beatmap_slider_tick_rate.argtypes = [ctypes.c_void_p]
+    c_lib.beatmap_check_suspicion.argtypes = [ctypes.c_void_p]
     c_lib.hitobjects_destroy.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
     c_lib.hitobjects_new.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_void_p]
     c_lib.hitobjects_len.argtypes = [ctypes.c_void_p]
@@ -139,6 +141,7 @@ def init_lib(path):
     c_lib.beatmap_destroy.restype = ctypes.c_int
     c_lib.beatmap_from_bytes.restype = ctypes.c_int
     c_lib.beatmap_from_path.restype = ctypes.c_int
+    c_lib.beatmap_from_clone.restype = ctypes.c_int
     c_lib.beatmap_convert.restype = ctypes.c_bool
     c_lib.beatmap_bpm.restype = ctypes.c_double
     c_lib.beatmap_total_break_time.restype = ctypes.c_double
@@ -152,6 +155,7 @@ def init_lib(path):
     c_lib.beatmap_od.restype = ctypes.c_float
     c_lib.beatmap_slider_multiplier.restype = ctypes.c_double
     c_lib.beatmap_slider_tick_rate.restype = ctypes.c_double
+    c_lib.beatmap_check_suspicion.restype = OptionTooSuspicious
     c_lib.hitobjects_destroy.restype = ctypes.c_int
     c_lib.hitobjects_new.restype = ctypes.c_int
     c_lib.hitobjects_len.restype = ctypes.c_uint32
@@ -208,6 +212,7 @@ def init_lib(path):
     c_lib.beatmap_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.beatmap_from_bytes.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.beatmap_from_path.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
+    c_lib.beatmap_from_clone.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.hitobjects_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.hitobjects_new.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
     c_lib.difficulty_destroy.errcheck = lambda rval, _fptr, _args: _errcheck(rval, 0)
@@ -295,6 +300,7 @@ class HitObjectKind:
 class HitResultPriority:
     BestCase = 0
     WorstCase = 1
+    Fastest = 2
 
 
 class Mode:
@@ -316,6 +322,21 @@ class OsuScoreOrigin:
     WithSliderAcc = 1
     #  For scores set on osu!lazer without slider accuracy
     WithoutSliderAcc = 2
+
+
+class TooSuspicious:
+    #  Notes are too dense time-wise.
+    Density = 0
+    #  The map seems too long.
+    Length = 1
+    #  Too many objects.
+    ObjectCount = 2
+    #  General red flag.
+    RedFlag = 3
+    #  Too many sliders' positions were suspicious.
+    SliderPositions = 4
+    #  Too many sliders had a very high amount of repeats.
+    SliderRepeats = 5
 
 
 class FFIError:
@@ -1228,6 +1249,31 @@ class TaikoDifficultyAttributes(ctypes.Structure):
 
  [`Beatmap`]: crate::model::beatmap::Beatmap"""
         return ctypes.Structure.__set__(self, "is_convert", value)
+
+
+class OptionTooSuspicious(ctypes.Structure):
+    """May optionally hold a value."""
+
+    _fields_ = [
+        ("_t", ctypes.c_int),
+        ("_is_some", ctypes.c_uint8),
+    ]
+
+    @property
+    def value(self) -> ctypes.c_int:
+        """Returns the value if it exists, or None."""
+        if self._is_some == 1:
+            return self._t
+        else:
+            return None
+
+    def is_some(self) -> bool:
+        """Returns true if the value exists."""
+        return self._is_some == 1
+
+    def is_none(self) -> bool:
+        """Returns true if the value does not exist."""
+        return self._is_some != 0
 
 
 class Optionf64(ctypes.Structure):
@@ -2371,6 +2417,14 @@ class Beatmap:
         self = Beatmap(Beatmap.__api_lock, ctx)
         return self
 
+    @staticmethod
+    def from_clone(beatmap: ctypes.c_void_p) -> Beatmap:
+        """"""
+        ctx = ctypes.c_void_p()
+        c_lib.beatmap_from_clone(ctx, beatmap)
+        self = Beatmap(Beatmap.__api_lock, ctx)
+        return self
+
     def __del__(self):
         c_lib.beatmap_destroy(self._ctx, )
     def convert(self, mode: ctypes.c_int, mods: ctypes.c_void_p) -> bool:
@@ -2424,6 +2478,15 @@ class Beatmap:
     def slider_tick_rate(self, ) -> float:
         """"""
         return c_lib.beatmap_slider_tick_rate(self._ctx, )
+
+    def check_suspicion(self, ) -> OptionTooSuspicious:
+        """ Check whether hitobjects appear too suspicious for further calculation.
+
+ Sometimes a [`Beatmap`] isn't created for gameplay but rather to test
+ the limits of osu! itself. Difficulty- and/or performance calculation
+ should likely be avoided on these maps due to potential performance
+ issues."""
+        return c_lib.beatmap_check_suspicion(self._ctx, )
 
 
 

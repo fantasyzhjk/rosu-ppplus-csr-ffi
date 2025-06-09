@@ -185,8 +185,13 @@ public partial struct OptionCatchPerformanceAttributes {
     public CatchPerformanceAttributes Unwrap() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(CatchPerformanceAttributes)} is null");
 }
 
-public partial struct OptionManiaPerformanceAttributes {
+public partial struct OptionManiaPerformanceAttributes
+{
     public ManiaPerformanceAttributes Unwrap() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(ManiaPerformanceAttributes)} is null");
+}
+
+public partial struct OptionTooSuspicious {
+    public TooSuspicious Unwrap() => this.ToNullable() ?? throw new NullReferenceException($"{nameof(TooSuspicious)} is null");
 }
 
 
@@ -334,6 +339,11 @@ public partial class Beatmap
         var self = new Beatmap();
         RosuLibrary.beatmap_from_bytes(ref self._context, data);
         return self;
+    }
+
+    public static Beatmap FromClone(Beatmap beatmap)
+    {
+        return FromClone(beatmap.Context);
     }
 
     /// Convert a Beatmap to the specified mode

@@ -36,6 +36,7 @@ pub fn ffi_inventory() -> Inventory {
         .register(extra_type!(beatmap::hitobjects::HitObject))
         .register(extra_type!(beatmap::hitobjects::HitObjectData))
         .register(extra_type!(beatmap::hitobjects::HitObjectKind))
+        .register(extra_type!(beatmap::too_suspicious::TooSuspicious))
         .register(extra_type!(mode::Mode))
         .register(extra_type!(hitresult_priority::HitResultPriority))
         .register(extra_type!(osu::attributes::OsuDifficultyAttributes))

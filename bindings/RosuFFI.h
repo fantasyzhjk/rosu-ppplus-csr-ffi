@@ -25,6 +25,7 @@ typedef enum hitresultpriority
     {
     HITRESULTPRIORITY_BESTCASE = 0,
     HITRESULTPRIORITY_WORSTCASE = 1,
+    HITRESULTPRIORITY_FASTEST = 2,
     } hitresultpriority;
 
 typedef enum mode
@@ -49,6 +50,22 @@ typedef enum osuscoreorigin
     /// For scores set on osu!lazer without slider accuracy
     OSUSCOREORIGIN_WITHOUTSLIDERACC = 2,
     } osuscoreorigin;
+
+typedef enum toosuspicious
+    {
+    /// Notes are too dense time-wise.
+    TOOSUSPICIOUS_DENSITY = 0,
+    /// The map seems too long.
+    TOOSUSPICIOUS_LENGTH = 1,
+    /// Too many objects.
+    TOOSUSPICIOUS_OBJECTCOUNT = 2,
+    /// General red flag.
+    TOOSUSPICIOUS_REDFLAG = 3,
+    /// Too many sliders' positions were suspicious.
+    TOOSUSPICIOUS_SLIDERPOSITIONS = 4,
+    /// Too many sliders had a very high amount of repeats.
+    TOOSUSPICIOUS_SLIDERREPEATS = 5,
+    } toosuspicious;
 
 typedef struct beatmap beatmap;
 
@@ -264,6 +281,15 @@ typedef struct taikodifficultyattributes
     /// [`Beatmap`]: crate::model::beatmap::Beatmap
     bool is_convert;
     } taikodifficultyattributes;
+
+///Option type containing boolean flag and maybe valid data.
+typedef struct optiontoosuspicious
+    {
+    ///Element that is maybe valid.
+    toosuspicious t;
+    ///Byte where `1` means element `t` is valid.
+    uint8_t is_some;
+    } optiontoosuspicious;
 
 ///Option type containing boolean flag and maybe valid data.
 typedef struct optionf64
@@ -552,6 +578,8 @@ ffierror beatmap_from_bytes(beatmap** context, sliceu8 data);
 
 ffierror beatmap_from_path(beatmap** context, const char* path);
 
+ffierror beatmap_from_clone(beatmap** context, const beatmap* beatmap);
+
 /// Convert a Beatmap to the specified mode
 bool beatmap_convert(beatmap* context, mode mode, const mods* mods);
 
@@ -578,6 +606,14 @@ float beatmap_od(beatmap* context);
 double beatmap_slider_multiplier(beatmap* context);
 
 double beatmap_slider_tick_rate(beatmap* context);
+
+/// Check whether hitobjects appear too suspicious for further calculation.
+///
+/// Sometimes a [`Beatmap`] isn't created for gameplay but rather to test
+/// the limits of osu! itself. Difficulty- and/or performance calculation
+/// should likely be avoided on these maps due to potential performance
+/// issues.
+optiontoosuspicious beatmap_check_suspicion(beatmap* context);
 
 /// Destroys the given instance.
 ///

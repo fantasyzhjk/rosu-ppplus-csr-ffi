@@ -1,5 +1,13 @@
 package desu.life;
 
+import com.sun.jna.Memory;
+import com.sun.jna.Native;
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+import com.sun.jna.ptr.PointerByReference;
+
+import desu.life.RosuFFI.RosuPPLib.OptionTooSuspicious;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,14 +16,9 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.Optional;
 
-import com.sun.jna.Memory;
-import com.sun.jna.Native;
-import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import com.sun.jna.ptr.PointerByReference;
-
 @SuppressWarnings("unused")
 public class RosuFFI {
+
     private static final Cleaner cleaner = Cleaner.create();
 
     public enum Mode {
@@ -48,9 +51,44 @@ public class RosuFFI {
         }
     }
 
+    public enum TooSuspicious {
+        /// Notes are too dense time-wise.
+        Density(0),
+        /// The map seems too long.
+        Length(1),
+        /// Too many objects.
+        ObjectCount(2),
+        /// General red flag.
+        RedFlag(3),
+        /// Too many sliders' positions were suspicious.
+        SliderPositions(4),
+        /// Too many sliders had a very high amount of repeats.
+        SliderRepeats(5);
+
+        private final int value;
+
+        TooSuspicious(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
+
+        public static TooSuspicious fromValue(int value) {
+            for (TooSuspicious v : values()) {
+                if (v.value == value) {
+                    return v;
+                }
+            }
+            throw new IllegalArgumentException("Unknown value: " + value);
+        }
+    }
+
     public enum HitResultPriority {
         BestCase(0),
-        WorstCase(1);
+        WorstCase(1),
+        Fastest(2);
 
         private final int value;
 
@@ -68,7 +106,7 @@ public class RosuFFI {
                     return v;
                 }
             }
-            throw new IllegalArgumentException("Unknown mode value: " + value);
+            throw new IllegalArgumentException("Unknown value: " + value);
         }
     }
 
@@ -96,7 +134,7 @@ public class RosuFFI {
                     return v;
                 }
             }
-            throw new IllegalArgumentException("Unknown mode value: " + value);
+            throw new IllegalArgumentException("Unknown value: " + value);
         }
     }
 
@@ -119,25 +157,38 @@ public class RosuFFI {
 
         private static File extractLibrary(String libName) throws IOException {
             // 从 classpath 中读取库文件
-            InputStream input = RosuFFI.class.getClassLoader().getResourceAsStream(libName);
+            InputStream input =
+                RosuFFI.class.getClassLoader().getResourceAsStream(libName);
             if (input == null) {
-                throw new IllegalArgumentException("Library not found: " + libName);
+                throw new IllegalArgumentException(
+                    "Library not found: " + libName
+                );
             }
 
             // 创建临时文件
-            File tempFile = File.createTempFile("native", libName.substring(libName.lastIndexOf('.')));
+            File tempFile = File.createTempFile(
+                "native",
+                libName.substring(libName.lastIndexOf('.'))
+            );
             tempFile.deleteOnExit();
 
             // 将资源写入临时文件
-            Files.copy(input, tempFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(
+                input,
+                tempFile.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            );
             input.close();
             return tempFile;
         }
 
         static {
-
             // 根据系统选择库文件
-            String libName = System.getProperty("os.name").toLowerCase().contains("win") ? "native/rosu_pp_ffi.dll" : "native/librosu_pp_ffi.so";
+            String libName = System.getProperty("os.name")
+                    .toLowerCase()
+                    .contains("win")
+                ? "native/rosu_pp_ffi.dll"
+                : "native/librosu_pp_ffi.so";
 
             // 从 resources 提取库到临时文件
             try {
@@ -155,31 +206,67 @@ public class RosuFFI {
         ///
         /// The passed parameter MUST have been created with the corresponding init function;
         /// passing any other value results in undefined behavior.
-        public static native int beatmap_attributes_destroy(PointerByReference context);
+        public static native int beatmap_attributes_destroy(
+            PointerByReference context
+        );
 
-        public static native int beatmap_attributes_new(PointerByReference context);
+        public static native int beatmap_attributes_new(
+            PointerByReference context
+        );
 
-        public static native void beatmap_attributes_mode(Pointer context, int mode);
+        public static native void beatmap_attributes_mode(
+            Pointer context,
+            int mode
+        );
 
-        public static native void beatmap_attributes_p_mods(Pointer context, Pointer mods);
+        public static native void beatmap_attributes_p_mods(
+            Pointer context,
+            Pointer mods
+        );
 
-        public static native void beatmap_attributes_i_mods(Pointer context, long mods);
+        public static native void beatmap_attributes_i_mods(
+            Pointer context,
+            long mods
+        );
 
-        public static native int beatmap_attributes_s_mods(Pointer context, String str);
+        public static native int beatmap_attributes_s_mods(
+            Pointer context,
+            String str
+        );
 
-        public static native void beatmap_attributes_clock_rate(Pointer context, double clock_rate);
+        public static native void beatmap_attributes_clock_rate(
+            Pointer context,
+            double clock_rate
+        );
 
-        public static native void beatmap_attributes_ar(Pointer context, float ar);
+        public static native void beatmap_attributes_ar(
+            Pointer context,
+            float ar
+        );
 
-        public static native void beatmap_attributes_cs(Pointer context, float cs);
+        public static native void beatmap_attributes_cs(
+            Pointer context,
+            float cs
+        );
 
-        public static native void beatmap_attributes_hp(Pointer context, float hp);
+        public static native void beatmap_attributes_hp(
+            Pointer context,
+            float hp
+        );
 
-        public static native void beatmap_attributes_od(Pointer context, float od);
+        public static native void beatmap_attributes_od(
+            Pointer context,
+            float od
+        );
 
-        public static native double beatmap_attributes_get_clock_rate(Pointer context);
+        public static native double beatmap_attributes_get_clock_rate(
+            Pointer context
+        );
 
-        public static native BeatmapAttributes.ByValue beatmap_attributes_build(Pointer context, Pointer beatmap);
+        public static native BeatmapAttributes.ByValue beatmap_attributes_build(
+            Pointer context,
+            Pointer beatmap
+        );
 
         /// Destroys the given instance.
         ///
@@ -189,20 +276,53 @@ public class RosuFFI {
         /// passing any other value results in undefined behavior.
         public static native int beatmap_destroy(PointerByReference context);
 
-        public static native int beatmap_from_bytes(PointerByReference context, Sliceu8 data);
+        public static native int beatmap_from_bytes(
+            PointerByReference context,
+            Sliceu8 data
+        );
 
-        public static native int beatmap_from_path(PointerByReference context, String path);
+        public static native int beatmap_from_path(
+            PointerByReference context,
+            String path
+        );
+
+        public static native int beatmap_from_clone(
+            PointerByReference context,
+            Pointer beatmap
+        );
 
         /// Convert a Beatmap to the specified mode
-        public static native boolean beatmap_convert(Pointer context, int mode, Pointer mods);
+        public static native boolean beatmap_convert(
+            Pointer context,
+            int mode,
+            Pointer mods
+        );
 
         public static native double beatmap_bpm(Pointer context);
 
         public static native double beatmap_total_break_time(Pointer context);
 
+        public static native int beatmap_version(Pointer context);
+        
+        public static native boolean beatmap_is_convert(Pointer context);
+
+        public static native int beatmap_stack_leniency(Pointer context);
+
         public static native int beatmap_mode(Pointer context);
 
-        public static native boolean beatmap_is_convert(Pointer context);
+        public static native float beatmap_ar(Pointer context);
+
+        public static native float beatmap_cs(Pointer context);
+
+        public static native float beatmap_hp(Pointer context);
+
+        public static native float beatmap_od(Pointer context);
+
+        public static native double beatmap_slider_multiplier(Pointer context);
+        
+        public static native double beatmap_slider_tick_rate(Pointer context);
+
+        public static native OptionTooSuspicious beatmap_check_suspicion(Pointer context);
 
         /// Destroys the given instance.
         ///
@@ -214,15 +334,24 @@ public class RosuFFI {
 
         public static native int difficulty_new(PointerByReference context);
 
-        public static native void difficulty_p_mods(Pointer context, Pointer mods);
+        public static native void difficulty_p_mods(
+            Pointer context,
+            Pointer mods
+        );
 
         public static native void difficulty_i_mods(Pointer context, long mods);
 
         public static native int difficulty_s_mods(Pointer context, String str);
 
-        public static native void difficulty_passed_objects(Pointer context, long passed_objects);
+        public static native void difficulty_passed_objects(
+            Pointer context,
+            long passed_objects
+        );
 
-        public static native void difficulty_clock_rate(Pointer context, double clock_rate);
+        public static native void difficulty_clock_rate(
+            Pointer context,
+            double clock_rate
+        );
 
         public static native void difficulty_ar(Pointer context, float ar);
 
@@ -232,11 +361,20 @@ public class RosuFFI {
 
         public static native void difficulty_od(Pointer context, float od);
 
-        public static native void difficulty_hardrock_offsets(Pointer context, boolean hardrock_offsets);
+        public static native void difficulty_hardrock_offsets(
+            Pointer context,
+            boolean hardrock_offsets
+        );
 
-        public static native void difficulty_lazer(Pointer context, boolean lazer);
+        public static native void difficulty_lazer(
+            Pointer context,
+            boolean lazer
+        );
 
-        public static native DifficultyAttributes.ByValue difficulty_calculate(Pointer context, Pointer beatmap);
+        public static native DifficultyAttributes.ByValue difficulty_calculate(
+            Pointer context,
+            Pointer beatmap
+        );
 
         public static native double difficulty_get_clock_rate(Pointer context);
 
@@ -246,21 +384,38 @@ public class RosuFFI {
         ///
         /// The passed parameter MUST have been created with the corresponding init function;
         /// passing any other value results in undefined behavior.
-        public static native int performance_destroy(PointerByReference context);
+        public static native int performance_destroy(
+            PointerByReference context
+        );
 
         public static native int performance_new(PointerByReference context);
 
         public static native void performance_mode(Pointer context, int mode);
 
-        public static native void performance_p_mods(Pointer context, Pointer mods);
+        public static native void performance_p_mods(
+            Pointer context,
+            Pointer mods
+        );
 
-        public static native void performance_i_mods(Pointer context, long mods);
+        public static native void performance_i_mods(
+            Pointer context,
+            long mods
+        );
 
-        public static native int performance_s_mods(Pointer context, String str);
+        public static native int performance_s_mods(
+            Pointer context,
+            String str
+        );
 
-        public static native void performance_passed_objects(Pointer context, long passed_objects);
+        public static native void performance_passed_objects(
+            Pointer context,
+            long passed_objects
+        );
 
-        public static native void performance_clock_rate(Pointer context, double clock_rate);
+        public static native void performance_clock_rate(
+            Pointer context,
+            double clock_rate
+        );
 
         public static native void performance_ar(Pointer context, float ar);
 
@@ -270,25 +425,55 @@ public class RosuFFI {
 
         public static native void performance_od(Pointer context, float od);
 
-        public static native void performance_hardrock_offsets(Pointer context, boolean hardrock_offsets);
+        public static native void performance_hardrock_offsets(
+            Pointer context,
+            boolean hardrock_offsets
+        );
 
-        public static native void performance_state(Pointer context, ScoreState.ByValue accuracy);
+        public static native void performance_state(
+            Pointer context,
+            ScoreState.ByValue accuracy
+        );
 
-        public static native void performance_accuracy(Pointer context, double accuracy);
+        public static native void performance_accuracy(
+            Pointer context,
+            double accuracy
+        );
 
-        public static native void performance_misses(Pointer context, long misses);
+        public static native void performance_misses(
+            Pointer context,
+            long misses
+        );
 
-        public static native void performance_combo(Pointer context, long combo);
+        public static native void performance_combo(
+            Pointer context,
+            long combo
+        );
 
-        public static native void performance_hitresult_priority(Pointer context, int hitresult_priority);
+        public static native void performance_hitresult_priority(
+            Pointer context,
+            int hitresult_priority
+        );
 
-        public static native void performance_lazer(Pointer context, boolean lazer);
+        public static native void performance_lazer(
+            Pointer context,
+            boolean lazer
+        );
 
-        public static native void performance_large_tick_hits(Pointer context, long large_tick_hits);
+        public static native void performance_large_tick_hits(
+            Pointer context,
+            long large_tick_hits
+        );
 
-        public static native void performance_small_tick_hits(Pointer context, long small_tick_hits);
+        public static native void performance_small_tick_hits(
+            Pointer context,
+            long small_tick_hits
+        );
 
-        public static native void performance_slider_end_hits(Pointer context, long slider_end_hits);
+        public static native void performance_slider_end_hits(
+            Pointer context,
+            long slider_end_hits
+        );
 
         public static native void performance_n300(Pointer context, long n300);
 
@@ -296,38 +481,71 @@ public class RosuFFI {
 
         public static native void performance_n50(Pointer context, long n50);
 
-        public static native void performance_n_katu(Pointer context, long n_katu);
+        public static native void performance_n_katu(
+            Pointer context,
+            long n_katu
+        );
 
-        public static native void performance_n_geki(Pointer context, long n_geki);
+        public static native void performance_n_geki(
+            Pointer context,
+            long n_geki
+        );
 
-        public static native ScoreState.ByValue performance_generate_state(Pointer context, Pointer beatmap);
+        public static native ScoreState.ByValue performance_generate_state(
+            Pointer context,
+            Pointer beatmap
+        );
 
-        public static native ScoreState.ByValue performance_generate_state_from_difficulty(Pointer context, DifficultyAttributes.ByValue difficulty_attr);
+        public static native ScoreState.ByValue performance_generate_state_from_difficulty(
+            Pointer context,
+            DifficultyAttributes.ByValue difficulty_attr
+        );
 
-        public static native PerformanceAttributes.ByValue performance_calculate(Pointer context, Pointer beatmap);
+        public static native PerformanceAttributes.ByValue performance_calculate(
+            Pointer context,
+            Pointer beatmap
+        );
 
-        public static native PerformanceAttributes.ByValue performance_calculate_from_difficulty(Pointer context, DifficultyAttributes.ByValue difficulty_attr);
+        public static native PerformanceAttributes.ByValue performance_calculate_from_difficulty(
+            Pointer context,
+            DifficultyAttributes.ByValue difficulty_attr
+        );
 
         public static native double performance_get_clock_rate(Pointer context);
 
-        
         /// Destroys the given instance.
         ///
         /// # Safety
         ///
         /// The passed parameter MUST have been created with the corresponding init function;
         /// passing any other value results in undefined behavior.
-        public static native int gradual_difficulty_destroy(PointerByReference context);
+        public static native int gradual_difficulty_destroy(
+            PointerByReference context
+        );
 
         /// Create a [`GradualDifficulty`] for a map of any mode.
-        public static native int gradual_difficulty_new(PointerByReference context, Pointer difficulty, Pointer beatmap);
+        public static native int gradual_difficulty_new(
+            PointerByReference context,
+            Pointer difficulty,
+            Pointer beatmap
+        );
 
         /// Create a [`GradualDifficulty`] for a [`Beatmap`] on a specific [`GameMode`].
-        public static native int gradual_difficulty_new_with_mode(PointerByReference context, Pointer difficulty, Pointer beatmap, int mode);
+        public static native int gradual_difficulty_new_with_mode(
+            PointerByReference context,
+            Pointer difficulty,
+            Pointer beatmap,
+            int mode
+        );
 
-        public static native OptionDifficultyAttributes gradual_difficulty_next(Pointer context);
+        public static native OptionDifficultyAttributes gradual_difficulty_next(
+            Pointer context
+        );
 
-        public static native OptionDifficultyAttributes gradual_difficulty_nth(Pointer context, long n);
+        public static native OptionDifficultyAttributes gradual_difficulty_nth(
+            Pointer context,
+            long n
+        );
 
         public static native long gradual_difficulty_len(Pointer context);
 
@@ -337,32 +555,52 @@ public class RosuFFI {
         ///
         /// The passed parameter MUST have been created with the corresponding init function;
         /// passing any other value results in undefined behavior.
-        public static native int gradual_performance_destroy(PointerByReference context);
+        public static native int gradual_performance_destroy(
+            PointerByReference context
+        );
 
         /// Create a [`GradualPerformance`] for a map of any mode.
-        public static native int gradual_performance_new(PointerByReference context, Pointer difficulty, Pointer beatmap);
+        public static native int gradual_performance_new(
+            PointerByReference context,
+            Pointer difficulty,
+            Pointer beatmap
+        );
 
         /// Create a [`GradualPerformance`] for a [`Beatmap`] on a specific [`GameMode`].
-        public static native int gradual_performance_new_with_mode(PointerByReference context, Pointer difficulty, Pointer beatmap, int mode);
+        public static native int gradual_performance_new_with_mode(
+            PointerByReference context,
+            Pointer difficulty,
+            Pointer beatmap,
+            int mode
+        );
 
         /// Process the next hit object and calculate the performance attributes
         /// for the resulting score state.
-        public static native OptionPerformanceAttributes gradual_performance_next(Pointer context, ScoreState.ByValue state);
+        public static native OptionPerformanceAttributes gradual_performance_next(
+            Pointer context,
+            ScoreState.ByValue state
+        );
 
         /// Process all remaining hit objects and calculate the final performance
         /// attributes.
-        public static native OptionPerformanceAttributes gradual_performance_last(Pointer context, ScoreState.ByValue state);
+        public static native OptionPerformanceAttributes gradual_performance_last(
+            Pointer context,
+            ScoreState.ByValue state
+        );
 
         /// Process everything up to the next `n`th hitobject and calculate the
         /// performance attributes for the resulting score state.
         ///
         /// Note that the count is zero-indexed, so `n=0` will process 1 object,
         /// `n=1` will process 2, and so on.
-        public static native OptionPerformanceAttributes gradual_performance_nth(Pointer context, ScoreState.ByValue state, long n);
+        public static native OptionPerformanceAttributes gradual_performance_nth(
+            Pointer context,
+            ScoreState.ByValue state,
+            long n
+        );
 
         /// Returns the amount of remaining objects.
         public static native long gradual_performance_len(Pointer context);
-
 
         /// Destroys the given instance.
         ///
@@ -372,7 +610,10 @@ public class RosuFFI {
         /// passing any other value results in undefined behavior.
         public static native int string_destroy(PointerByReference context);
 
-        public static native int string_from_c_str(PointerByReference context, String str);
+        public static native int string_from_c_str(
+            PointerByReference context,
+            String str
+        );
 
         public static native int string_empty(PointerByReference context);
 
@@ -390,11 +631,24 @@ public class RosuFFI {
 
         public static native int mods_new(PointerByReference context, int mode);
 
-        public static native int mods_from_acronyms(PointerByReference context, String str, int mode);
+        public static native int mods_from_acronyms(
+            PointerByReference context,
+            String str,
+            int mode
+        );
 
-        public static native int mods_from_bits(PointerByReference context, long bits, int mode);
+        public static native int mods_from_bits(
+            PointerByReference context,
+            long bits,
+            int mode
+        );
 
-        public static native int mods_from_json(PointerByReference context, String str, int mode, boolean deny_unknown_fields);
+        public static native int mods_from_json(
+            PointerByReference context,
+            String str,
+            int mode,
+            boolean deny_unknown_fields
+        );
 
         public static native void mods_remove_unknown_mods(Pointer context);
 
@@ -406,7 +660,11 @@ public class RosuFFI {
 
         public static native void mods_json(Pointer context, Pointer str);
 
-        public static native boolean mods_insert_json(Pointer context, String str, boolean deny_unknown_fields);
+        public static native boolean mods_insert_json(
+            Pointer context,
+            String str,
+            boolean deny_unknown_fields
+        );
 
         public static native boolean mods_insert(Pointer context, String str);
 
@@ -416,17 +674,30 @@ public class RosuFFI {
 
         public static native Optionf64 mods_clock_rate(Pointer context);
 
-        public static native void debug_difficylty_attributes(DifficultyAttributes res, Pointer str);
+        public static native void debug_difficylty_attributes(
+            DifficultyAttributes res,
+            Pointer str
+        );
 
-        public static native void debug_performance_attributes(PerformanceAttributes res, Pointer str);
+        public static native void debug_performance_attributes(
+            PerformanceAttributes res,
+            Pointer str
+        );
 
-        public static native void debug_score_state(ScoreState res, Pointer str);
+        public static native void debug_score_state(
+            ScoreState res,
+            Pointer str
+        );
 
-        public static native double calculate_accuacy(ScoreState state, DifficultyAttributes difficulty, int origin);
+        public static native double calculate_accuacy(
+            ScoreState state,
+            DifficultyAttributes difficulty,
+            int origin
+        );
 
-
-        @Structure.FieldOrder({"data", "len"})
+        @Structure.FieldOrder({ "data", "len" })
         public static class Sliceu8 extends Structure {
+
             public Pointer data;
             public long len;
 
@@ -444,17 +715,51 @@ public class RosuFFI {
 
             public Sliceu8() {}
 
-            public static class ByReference extends Sliceu8 implements Structure.ByReference {}
-            public static class ByValue extends Sliceu8 implements Structure.ByValue {}
+            public static class ByReference
+                extends Sliceu8
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends Sliceu8
+                implements Structure.ByValue {}
         }
 
-        @Structure.FieldOrder({"t", "is_some"})
+        @Structure.FieldOrder({ "t", "is_some" })
+        public static class OptionTooSuspicious extends Structure {
+
+            public int t;
+            public byte is_some;
+
+            public static class ByReference
+                extends OptionTooSuspicious
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionTooSuspicious
+                implements Structure.ByValue {}
+
+            public Optional<TooSuspicious> toOptional() {
+                return is_some == 1 ? Optional.of(TooSuspicious.fromValue(t)) : Optional.empty();
+            }
+
+            public TooSuspicious unwrap() {
+                return toOptional().orElseThrow();
+            }
+        }
+
+        @Structure.FieldOrder({ "t", "is_some" })
         public static class Optionf64 extends Structure {
+
             public double t;
             public byte is_some;
 
-            public static class ByReference extends Optionf64 implements Structure.ByReference {}
-            public static class ByValue extends Optionf64 implements Structure.ByValue {}
+            public static class ByReference
+                extends Optionf64
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends Optionf64
+                implements Structure.ByValue {}
 
             public Optional<Double> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -465,13 +770,19 @@ public class RosuFFI {
             }
         }
 
-        @Structure.FieldOrder({"t", "is_some"})
+        @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionDifficultyAttributes extends Structure {
+
             public DifficultyAttributes t;
             public byte is_some;
 
-            public static class ByReference extends OptionDifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionDifficultyAttributes implements Structure.ByValue {}
+            public static class ByReference
+                extends OptionDifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionDifficultyAttributes
+                implements Structure.ByValue {}
 
             public Optional<DifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -482,13 +793,19 @@ public class RosuFFI {
             }
         }
 
-        @Structure.FieldOrder({"t", "is_some"})
+        @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionPerformanceAttributes extends Structure {
+
             public PerformanceAttributes t;
             public byte is_some;
 
-            public static class ByReference extends OptionPerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionPerformanceAttributes implements Structure.ByValue {}
+            public static class ByReference
+                extends OptionPerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionPerformanceAttributes
+                implements Structure.ByValue {}
 
             public Optional<PerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -499,146 +816,266 @@ public class RosuFFI {
             }
         }
 
-        @Structure.FieldOrder({ "aim", "aim_difficult_slider_count", "jump", "flow", "precision", 
-                "speed", "stamina", "accuracy", "slider_factor", "speed_note_count", 
-                "aim_difficult_strain_count", "jump_aim_difficult_strain_count", 
-                "flow_aim_difficult_strain_count", "speed_difficult_strain_count", 
-                "stamina_difficult_strain_count", "ar", "great_hit_window", "ok_hit_window", 
-                "meh_hit_window", "hp", "n_circles", "n_sliders", "n_large_ticks", 
-                "n_spinners", "stars", "max_combo" })
+        @Structure.FieldOrder(
+            {
+                "aim",
+                "aim_difficult_slider_count",
+                "jump",
+                "flow",
+                "precision",
+                "speed",
+                "stamina",
+                "accuracy",
+                "slider_factor",
+                "speed_note_count",
+                "aim_difficult_strain_count",
+                "jump_aim_difficult_strain_count",
+                "flow_aim_difficult_strain_count",
+                "speed_difficult_strain_count",
+                "stamina_difficult_strain_count",
+                "ar",
+                "great_hit_window",
+                "ok_hit_window",
+                "meh_hit_window",
+                "hp",
+                "n_circles",
+                "n_sliders",
+                "n_large_ticks",
+                "n_spinners",
+                "stars",
+                "max_combo",
+            }
+        )
         public static class OsuDifficultyAttributes extends Structure {
-            public double aim;                                  // The difficulty of the aim skill
-            public double aim_difficult_slider_count;           // The number of sliders weighted by difficulty
-            public double jump;                                 // The difficulty of the jump skill
-            public double flow;                                 // The difficulty of the flow skill
-            public double precision;                            // The difficulty of the precision skill
-            public double speed;                                // The difficulty of the speed skill
-            public double stamina;                              // The difficulty of the stamina skill
-            public double accuracy;                             // The difficulty of the accuracy skill
-            public double slider_factor;                        // The ratio of the aim strain with and without considering sliders
-            public double speed_note_count;                     // The number of clickable objects weighted by difficulty
-            public double aim_difficult_strain_count;           // Weighted sum of aim strains
-            public double jump_aim_difficult_strain_count;      // Weighted sum of jump aim strains
-            public double flow_aim_difficult_strain_count;      // Weighted sum of flow aim strains
-            public double speed_difficult_strain_count;         // Weighted sum of speed strains
-            public double stamina_difficult_strain_count;       // Weighted sum of stamina strains
-            public double ar;                                   // The approach rate
-            public double great_hit_window;                     // The great hit window
-            public double ok_hit_window;                        // The ok hit window
-            public double meh_hit_window;                       // The meh hit window
-            public double hp;                                   // The health drain rate
-            public int n_circles;                               // The amount of circles (uint -> int)
-            public int n_sliders;                               // The amount of sliders (uint -> int)
-            public int n_large_ticks;                           // The amount of "large ticks" (uint -> int)
-            public int n_spinners;                              // The amount of spinners (uint -> int)
-            public double stars;                                // The final star rating
-            public int max_combo;                               // The maximum combo (uint -> int)
-        
-            public static class ByReference extends OsuDifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends OsuDifficultyAttributes implements Structure.ByValue {}
+
+            public double aim; // The difficulty of the aim skill
+            public double aim_difficult_slider_count; // The number of sliders weighted by difficulty
+            public double jump; // The difficulty of the jump skill
+            public double flow; // The difficulty of the flow skill
+            public double precision; // The difficulty of the precision skill
+            public double speed; // The difficulty of the speed skill
+            public double stamina; // The difficulty of the stamina skill
+            public double accuracy; // The difficulty of the accuracy skill
+            public double slider_factor; // The ratio of the aim strain with and without considering sliders
+            public double speed_note_count; // The number of clickable objects weighted by difficulty
+            public double aim_difficult_strain_count; // Weighted sum of aim strains
+            public double jump_aim_difficult_strain_count; // Weighted sum of jump aim strains
+            public double flow_aim_difficult_strain_count; // Weighted sum of flow aim strains
+            public double speed_difficult_strain_count; // Weighted sum of speed strains
+            public double stamina_difficult_strain_count; // Weighted sum of stamina strains
+            public double ar; // The approach rate
+            public double great_hit_window; // The great hit window
+            public double ok_hit_window; // The ok hit window
+            public double meh_hit_window; // The meh hit window
+            public double hp; // The health drain rate
+            public int n_circles; // The amount of circles (uint -> int)
+            public int n_sliders; // The amount of sliders (uint -> int)
+            public int n_large_ticks; // The amount of "large ticks" (uint -> int)
+            public int n_spinners; // The amount of spinners (uint -> int)
+            public double stars; // The final star rating
+            public int max_combo; // The maximum combo (uint -> int)
+
+            public static class ByReference
+                extends OsuDifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OsuDifficultyAttributes
+                implements Structure.ByValue {}
         }
-        
-        @Structure.FieldOrder({ "difficulty", "pp", "pp_aim", "pp_jump_aim", "pp_flow_aim", 
-                "pp_precision", "pp_speed", "pp_stamina", "pp_acc", "effective_miss_count" })
+
+        @Structure.FieldOrder(
+            {
+                "difficulty",
+                "pp",
+                "pp_aim",
+                "pp_jump_aim",
+                "pp_flow_aim",
+                "pp_precision",
+                "pp_speed",
+                "pp_stamina",
+                "pp_acc",
+                "effective_miss_count",
+            }
+        )
         public static class OsuPerformanceAttributes extends Structure {
-            public OsuDifficultyAttributes difficulty;          // The difficulty attributes that were used for the performance calculation
-            public double pp;                                   // The final performance points
-            public double pp_aim;                               // The aim portion of the final pp
-            public double pp_jump_aim;                          // The jump aim portion of the final pp
-            public double pp_flow_aim;                          // The flow aim portion of the final pp
-            public double pp_precision;                         // The precision portion of the final pp
-            public double pp_speed;                             // The speed portion of the final pp
-            public double pp_stamina;                           // The stamina portion of the final pp
-            public double pp_acc;                               // The acc portion of the final pp
-            public double effective_miss_count;                 // Misses including an approximated amount of slider breaks
-        
-            public static class ByReference extends OsuPerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends OsuPerformanceAttributes implements Structure.ByValue {}
+
+            public OsuDifficultyAttributes difficulty; // The difficulty attributes that were used for the performance calculation
+            public double pp; // The final performance points
+            public double pp_aim; // The aim portion of the final pp
+            public double pp_jump_aim; // The jump aim portion of the final pp
+            public double pp_flow_aim; // The flow aim portion of the final pp
+            public double pp_precision; // The precision portion of the final pp
+            public double pp_speed; // The speed portion of the final pp
+            public double pp_stamina; // The stamina portion of the final pp
+            public double pp_acc; // The acc portion of the final pp
+            public double effective_miss_count; // Misses including an approximated amount of slider breaks
+
+            public static class ByReference
+                extends OsuPerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OsuPerformanceAttributes
+                implements Structure.ByValue {}
         }
-        @Structure.FieldOrder({ "stamina", "rhythm", "color", "reading",
-                "great_hit_window", "ok_hit_window", "mono_stamina_factor",
-                "stars", "max_combo", "is_convert" })
+
+        @Structure.FieldOrder(
+            {
+                "stamina",
+                "rhythm",
+                "color",
+                "reading",
+                "great_hit_window",
+                "ok_hit_window",
+                "mono_stamina_factor",
+                "stars",
+                "max_combo",
+                "is_convert",
+            }
+        )
         public static class TaikoDifficultyAttributes extends Structure {
-            public double stamina;               // Difficulty of the stamina skill
-            public double rhythm;                // Difficulty of the rhythm skill
-            public double color;                 // Difficulty of the color skill
-            public double reading;               // The difficulty of the reading skill.
-            public double great_hit_window;      // Hit window for an n300 inclusive of mods
-            public double ok_hit_window;         // Hit window for an n100 inclusive of mods
-            public double mono_stamina_factor;   // Stamina difficulty ratio for mono-color streams
-            public double stars;                 // Final star rating
-            public int max_combo;                // Maximum combo (unsigned int -> int)
-            public boolean is_convert;           // Whether the beatmap is a convert (osu!standard)
 
-            public static class ByReference extends TaikoDifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends TaikoDifficultyAttributes implements Structure.ByValue {}
+            public double stamina; // Difficulty of the stamina skill
+            public double rhythm; // Difficulty of the rhythm skill
+            public double color; // Difficulty of the color skill
+            public double reading; // The difficulty of the reading skill.
+            public double great_hit_window; // Hit window for an n300 inclusive of mods
+            public double ok_hit_window; // Hit window for an n100 inclusive of mods
+            public double mono_stamina_factor; // Stamina difficulty ratio for mono-color streams
+            public double stars; // Final star rating
+            public int max_combo; // Maximum combo (unsigned int -> int)
+            public boolean is_convert; // Whether the beatmap is a convert (osu!standard)
+
+            public static class ByReference
+                extends TaikoDifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends TaikoDifficultyAttributes
+                implements Structure.ByValue {}
         }
 
-        @Structure.FieldOrder({ "difficulty", "pp", "pp_acc", "pp_difficulty",
-                "effective_miss_count", "estimated_unstable_rate" })
+        @Structure.FieldOrder(
+            {
+                "difficulty",
+                "pp",
+                "pp_acc",
+                "pp_difficulty",
+                "effective_miss_count",
+                "estimated_unstable_rate",
+            }
+        )
         public static class TaikoPerformanceAttributes extends Structure {
-            public TaikoDifficultyAttributes difficulty;   // Difficulty attributes used for performance calculation
-            public double pp;                              // Final performance points
-            public double pp_acc;                          // Accuracy portion of the final pp
-            public double pp_difficulty;                   // Strain portion of the final pp
-            public double effective_miss_count;            // Scaled miss count based on total hits
-            public Optionf64 estimated_unstable_rate;      // Estimated unstable rate (optional value)
 
-            public static class ByReference extends TaikoPerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends TaikoPerformanceAttributes implements Structure.ByValue {}
+            public TaikoDifficultyAttributes difficulty; // Difficulty attributes used for performance calculation
+            public double pp; // Final performance points
+            public double pp_acc; // Accuracy portion of the final pp
+            public double pp_difficulty; // Strain portion of the final pp
+            public double effective_miss_count; // Scaled miss count based on total hits
+            public Optionf64 estimated_unstable_rate; // Estimated unstable rate (optional value)
+
+            public static class ByReference
+                extends TaikoPerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends TaikoPerformanceAttributes
+                implements Structure.ByValue {}
         }
 
-        @Structure.FieldOrder({ "stars", "ar", "n_fruits", "n_droplets", "n_tiny_droplets", "is_convert" })
+        @Structure.FieldOrder(
+            {
+                "stars",
+                "ar",
+                "n_fruits",
+                "n_droplets",
+                "n_tiny_droplets",
+                "is_convert",
+            }
+        )
         public static class CatchDifficultyAttributes extends Structure {
-            public double stars;        // Final star rating
-            public double ar;           // Approach rate
-            public int n_fruits;        // Number of fruits (unsigned int -> use int in Java)
-            public int n_droplets;      // Number of droplets (unsigned int -> use int in Java)
-            public int n_tiny_droplets; // Number of tiny droplets (unsigned int -> use int in Java)
-            public boolean is_convert;  // Whether the beatmap is a convert (bool)
 
-            public static class ByReference extends CatchDifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends CatchDifficultyAttributes implements Structure.ByValue {}
+            public double stars; // Final star rating
+            public double ar; // Approach rate
+            public int n_fruits; // Number of fruits (unsigned int -> use int in Java)
+            public int n_droplets; // Number of droplets (unsigned int -> use int in Java)
+            public int n_tiny_droplets; // Number of tiny droplets (unsigned int -> use int in Java)
+            public boolean is_convert; // Whether the beatmap is a convert (bool)
+
+            public static class ByReference
+                extends CatchDifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends CatchDifficultyAttributes
+                implements Structure.ByValue {}
         }
 
         @Structure.FieldOrder({ "difficulty", "pp" })
         public static class CatchPerformanceAttributes extends Structure {
-            public CatchDifficultyAttributes difficulty; // Nested CatchDifficultyAttributes structure
-            public double pp;                            // Final performance points
 
-            public static class ByReference extends CatchPerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends CatchPerformanceAttributes implements Structure.ByValue {}
+            public CatchDifficultyAttributes difficulty; // Nested CatchDifficultyAttributes structure
+            public double pp; // Final performance points
+
+            public static class ByReference
+                extends CatchPerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends CatchPerformanceAttributes
+                implements Structure.ByValue {}
         }
 
-        @Structure.FieldOrder({ "stars", "n_objects", "n_hold_notes", "max_combo", "is_convert" })
+        @Structure.FieldOrder(
+            { "stars", "n_objects", "n_hold_notes", "max_combo", "is_convert" }
+        )
         public static class ManiaDifficultyAttributes extends Structure {
-            public double stars;        // Final star rating
-            public int n_objects;       // Number of hit objects (unsigned int -> int in Java)
-            public int n_hold_notes;    // Number of hold notes (unsigned int -> int in Java)
-            public int max_combo;       // Maximum achievable combo (unsigned int -> int in Java)
-            public boolean is_convert;  // Whether the beatmap is a convert
 
-            public static class ByReference extends ManiaDifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends ManiaDifficultyAttributes implements Structure.ByValue {}
+            public double stars; // Final star rating
+            public int n_objects; // Number of hit objects (unsigned int -> int in Java)
+            public int n_hold_notes; // Number of hold notes (unsigned int -> int in Java)
+            public int max_combo; // Maximum achievable combo (unsigned int -> int in Java)
+            public boolean is_convert; // Whether the beatmap is a convert
+
+            public static class ByReference
+                extends ManiaDifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends ManiaDifficultyAttributes
+                implements Structure.ByValue {}
         }
 
         @Structure.FieldOrder({ "difficulty", "pp", "pp_difficulty" })
         public static class ManiaPerformanceAttributes extends Structure {
-            public ManiaDifficultyAttributes difficulty; // Nested ManiaDifficultyAttributes structure
-            public double pp;                            // Final performance points
-            public double pp_difficulty;                 // Difficulty portion of the final pp
 
-            public static class ByReference extends ManiaPerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends ManiaPerformanceAttributes implements Structure.ByValue {}
+            public ManiaDifficultyAttributes difficulty; // Nested ManiaDifficultyAttributes structure
+            public double pp; // Final performance points
+            public double pp_difficulty; // Difficulty portion of the final pp
+
+            public static class ByReference
+                extends ManiaPerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends ManiaPerformanceAttributes
+                implements Structure.ByValue {}
         }
 
         @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionOsuDifficultyAttributes extends Structure {
-            public OsuDifficultyAttributes t;     // Element that is maybe valid
-            public byte is_some;                  // 1 means element t is valid
 
-            public static class ByReference extends OptionOsuDifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionOsuDifficultyAttributes implements Structure.ByValue {}
+            public OsuDifficultyAttributes t; // Element that is maybe valid
+            public byte is_some; // 1 means element t is valid
+
+            public static class ByReference
+                extends OptionOsuDifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionOsuDifficultyAttributes
+                implements Structure.ByValue {}
 
             public Optional<OsuDifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -651,11 +1088,17 @@ public class RosuFFI {
 
         @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionTaikoDifficultyAttributes extends Structure {
-            public TaikoDifficultyAttributes t;     // Element that is maybe valid
-            public byte is_some;                  // 1 means element t is valid
 
-            public static class ByReference extends OptionTaikoDifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionTaikoDifficultyAttributes implements Structure.ByValue {}
+            public TaikoDifficultyAttributes t; // Element that is maybe valid
+            public byte is_some; // 1 means element t is valid
+
+            public static class ByReference
+                extends OptionTaikoDifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionTaikoDifficultyAttributes
+                implements Structure.ByValue {}
 
             public Optional<TaikoDifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -668,11 +1111,17 @@ public class RosuFFI {
 
         @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionCatchDifficultyAttributes extends Structure {
-            public CatchDifficultyAttributes t;     // Element that is maybe valid
-            public byte is_some;                  // 1 means element t is valid
 
-            public static class ByReference extends OptionCatchDifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionCatchDifficultyAttributes implements Structure.ByValue {}
+            public CatchDifficultyAttributes t; // Element that is maybe valid
+            public byte is_some; // 1 means element t is valid
+
+            public static class ByReference
+                extends OptionCatchDifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionCatchDifficultyAttributes
+                implements Structure.ByValue {}
 
             public Optional<CatchDifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -685,11 +1134,17 @@ public class RosuFFI {
 
         @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionManiaDifficultyAttributes extends Structure {
-            public ManiaDifficultyAttributes t;     // Element that is maybe valid
-            public byte is_some;                  // 1 means element t is valid
 
-            public static class ByReference extends OptionManiaDifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionManiaDifficultyAttributes implements Structure.ByValue {}
+            public ManiaDifficultyAttributes t; // Element that is maybe valid
+            public byte is_some; // 1 means element t is valid
+
+            public static class ByReference
+                extends OptionManiaDifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionManiaDifficultyAttributes
+                implements Structure.ByValue {}
 
             public Optional<ManiaDifficultyAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -702,23 +1157,35 @@ public class RosuFFI {
 
         @Structure.FieldOrder({ "osu", "taiko", "fruit", "mania", "mode" })
         public static class DifficultyAttributes extends Structure {
-            public OptionOsuDifficultyAttributes osu;   // Option for osu!difficulty attributes
+
+            public OptionOsuDifficultyAttributes osu; // Option for osu!difficulty attributes
             public OptionTaikoDifficultyAttributes taiko; // Option for taiko difficulty attributes
             public OptionCatchDifficultyAttributes fruit; // Option for catch difficulty attributes
             public OptionManiaDifficultyAttributes mania; // Option for mania difficulty attributes
-            public int mode;                            // Mode enum (osu!, taiko, catch, mania)
+            public int mode; // Mode enum (osu!, taiko, catch, mania)
 
-            public static class ByReference extends DifficultyAttributes implements Structure.ByReference {}
-            public static class ByValue extends DifficultyAttributes implements Structure.ByValue {}
+            public static class ByReference
+                extends DifficultyAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends DifficultyAttributes
+                implements Structure.ByValue {}
         }
 
         @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionOsuPerformanceAttributes extends Structure {
-            public OsuPerformanceAttributes t;     // Element that is maybe valid
-            public byte is_some;                  // 1 means element t is valid
 
-            public static class ByReference extends OptionOsuPerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionOsuPerformanceAttributes implements Structure.ByValue {}
+            public OsuPerformanceAttributes t; // Element that is maybe valid
+            public byte is_some; // 1 means element t is valid
+
+            public static class ByReference
+                extends OptionOsuPerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionOsuPerformanceAttributes
+                implements Structure.ByValue {}
 
             public Optional<OsuPerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -731,11 +1198,17 @@ public class RosuFFI {
 
         @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionTaikoPerformanceAttributes extends Structure {
-            public TaikoPerformanceAttributes t;     // Element that is maybe valid
-            public byte is_some;                  // 1 means element t is valid
 
-            public static class ByReference extends OptionTaikoPerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionTaikoPerformanceAttributes implements Structure.ByValue {}
+            public TaikoPerformanceAttributes t; // Element that is maybe valid
+            public byte is_some; // 1 means element t is valid
+
+            public static class ByReference
+                extends OptionTaikoPerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionTaikoPerformanceAttributes
+                implements Structure.ByValue {}
 
             public Optional<TaikoPerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -748,11 +1221,17 @@ public class RosuFFI {
 
         @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionCatchPerformanceAttributes extends Structure {
-            public CatchPerformanceAttributes t;     // Element that is maybe valid
-            public byte is_some;                  // 1 means element t is valid
 
-            public static class ByReference extends OptionCatchPerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionCatchPerformanceAttributes implements Structure.ByValue {}
+            public CatchPerformanceAttributes t; // Element that is maybe valid
+            public byte is_some; // 1 means element t is valid
+
+            public static class ByReference
+                extends OptionCatchPerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionCatchPerformanceAttributes
+                implements Structure.ByValue {}
 
             public Optional<CatchPerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -765,11 +1244,17 @@ public class RosuFFI {
 
         @Structure.FieldOrder({ "t", "is_some" })
         public static class OptionManiaPerformanceAttributes extends Structure {
-            public ManiaPerformanceAttributes t;     // Element that is maybe valid
-            public byte is_some;                  // 1 means element t is valid
 
-            public static class ByReference extends OptionManiaPerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends OptionManiaPerformanceAttributes implements Structure.ByValue {}
+            public ManiaPerformanceAttributes t; // Element that is maybe valid
+            public byte is_some; // 1 means element t is valid
+
+            public static class ByReference
+                extends OptionManiaPerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends OptionManiaPerformanceAttributes
+                implements Structure.ByValue {}
 
             public Optional<ManiaPerformanceAttributes> toOptional() {
                 return is_some == 1 ? Optional.of(t) : Optional.empty();
@@ -782,18 +1267,25 @@ public class RosuFFI {
 
         @Structure.FieldOrder({ "osu", "taiko", "fruit", "mania", "mode" })
         public static class PerformanceAttributes extends Structure {
-            public OptionOsuPerformanceAttributes osu;   // Option for osu!difficulty attributes
+
+            public OptionOsuPerformanceAttributes osu; // Option for osu!difficulty attributes
             public OptionTaikoPerformanceAttributes taiko; // Option for taiko difficulty attributes
             public OptionCatchPerformanceAttributes fruit; // Option for catch difficulty attributes
             public OptionManiaPerformanceAttributes mania; // Option for mania difficulty attributes
-            public int mode;                            // Mode enum (osu!, taiko, catch, mania)
+            public int mode; // Mode enum (osu!, taiko, catch, mania)
 
-            public static class ByReference extends PerformanceAttributes implements Structure.ByReference {}
-            public static class ByValue extends PerformanceAttributes implements Structure.ByValue {}
+            public static class ByReference
+                extends PerformanceAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends PerformanceAttributes
+                implements Structure.ByValue {}
         }
 
         @Structure.FieldOrder({ "ar", "od_great", "od_ok" })
         public static class HitWindows extends Structure {
+
             /// Hit window for approach rate i.e. `TimePreempt` in milliseconds.
             public double ar;
             /// Hit window for overall difficulty i.e. time to hit a 300 ("Great") in milliseconds.
@@ -803,27 +1295,53 @@ public class RosuFFI {
             /// `None` for osu!mania.
             public Optionf64 od_ok;
 
-            public static class ByReference extends HitWindows implements Structure.ByReference {}
-            public static class ByValue extends HitWindows implements Structure.ByValue {}
+            public static class ByReference
+                extends HitWindows
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends HitWindows
+                implements Structure.ByValue {}
         }
 
-        @Structure.FieldOrder({ "ar", "od", "cs", "hp", "clock_rate", "hit_windows" })
+        @Structure.FieldOrder(
+            { "ar", "od", "cs", "hp", "clock_rate", "hit_windows" }
+        )
         public static class BeatmapAttributes extends Structure {
-            public double ar;         // Approach rate
-            public double od;         // Overall difficulty
-            public double cs;         // Circle size
-            public double hp;         // Health drain rate
+
+            public double ar; // Approach rate
+            public double od; // Overall difficulty
+            public double cs; // Circle size
+            public double hp; // Health drain rate
             public double clock_rate; // Clock rate with respect to mods
             public HitWindows hit_windows; // Nested hit windows structure
 
-            public static class ByReference extends BeatmapAttributes implements Structure.ByReference {}
-            public static class ByValue extends BeatmapAttributes implements Structure.ByValue {}
+            public static class ByReference
+                extends BeatmapAttributes
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends BeatmapAttributes
+                implements Structure.ByValue {}
         }
 
-        @Structure.FieldOrder({ "max_combo", "osu_large_tick_hits", "osu_small_tick_hits", "slider_end_hits",
-                "n_geki", "n_katu", "n300", "n100", "n50", "misses" })
+        @Structure.FieldOrder(
+            {
+                "max_combo",
+                "osu_large_tick_hits",
+                "osu_small_tick_hits",
+                "slider_end_hits",
+                "n_geki",
+                "n_katu",
+                "n300",
+                "n100",
+                "n50",
+                "misses",
+            }
+        )
         public static class ScoreState extends Structure {
-            public int max_combo;            // Maximum combo (unsigned int -> int)
+
+            public int max_combo; // Maximum combo (unsigned int -> int)
             /// "Large tick" hits for osu!standard.
             ///
             /// The meaning depends on the kind of score:
@@ -846,61 +1364,89 @@ public class RosuFFI {
             ///
             /// Only relevant for osu!standard in lazer.
             public int slider_end_hits;
-            public int n_geki;               // Current gekis (unsigned int -> int)
-            public int n_katu;               // Current katus (unsigned int -> int)
-            public int n300;                 // Current 300s (unsigned int -> int)
-            public int n100;                 // Current 100s (unsigned int -> int)
-            public int n50;                  // Current 50s (unsigned int -> int)
-            public int misses;               // Current misses (unsigned int -> int)
+            public int n_geki; // Current gekis (unsigned int -> int)
+            public int n_katu; // Current katus (unsigned int -> int)
+            public int n300; // Current 300s (unsigned int -> int)
+            public int n100; // Current 100s (unsigned int -> int)
+            public int n50; // Current 50s (unsigned int -> int)
+            public int misses; // Current misses (unsigned int -> int)
 
-            public static class ByReference extends ScoreState implements Structure.ByReference {}
-            public static class ByValue extends ScoreState implements Structure.ByValue {}
+            public static class ByReference
+                extends ScoreState
+                implements Structure.ByReference {}
+
+            public static class ByValue
+                extends ScoreState
+                implements Structure.ByValue {}
         }
     }
 
     public static class Beatmap implements AutoCloseable {
-        private final PointerByReference _context;  // The context of the Beatmap
+
+        private final PointerByReference _context; // The context of the Beatmap
 
         // Load the Beatmap from bytes
         public Beatmap(byte[] data) throws FFIException {
-            _context = new PointerByReference();  // Initialize _context to a valid Pointer
+            _context = new PointerByReference(); // Initialize _context to a valid Pointer
             ByteBuffer buffer = ByteBuffer.allocateDirect(data.length);
             buffer.put(data);
             buffer.flip();
             var sliceu8 = new RosuPPLib.Sliceu8(buffer);
             int rval = RosuPPLib.beatmap_from_bytes(_context, sliceu8);
             if (rval != FFIError.Ok) {
-                throw new FFIException("Error loading beatmap from bytes", rval);
+                throw new FFIException(
+                    "Error loading beatmap from bytes",
+                    rval
+                );
             }
         }
 
         public Beatmap(RosuPPLib.Sliceu8 data) throws FFIException {
-            _context = new PointerByReference();  // Initialize _context to a valid Pointer
+            _context = new PointerByReference(); // Initialize _context to a valid Pointer
             int rval = RosuPPLib.beatmap_from_bytes(_context, data);
             if (rval != FFIError.Ok) {
-                throw new FFIException("Error loading beatmap from bytes", rval);
+                throw new FFIException(
+                    "Error loading beatmap from bytes",
+                    rval
+                );
             }
         }
 
-
         // Load the Beatmap from a file path
         public Beatmap(String path) throws FFIException {
-            _context = new PointerByReference();  // Initialize _context to a valid Pointer
+            _context = new PointerByReference(); // Initialize _context to a valid Pointer
             int rval = RosuPPLib.beatmap_from_path(_context, path);
             if (rval != FFIError.Ok) {
                 throw new FFIException("Error loading beatmap from path", rval);
             }
         }
 
+        // Clone the Beatmap
+        public Beatmap(Beatmap beatmap) throws FFIException {
+            _context = new PointerByReference(); // Initialize _context to a valid Pointer
+            int rval = RosuPPLib.beatmap_from_clone(_context, beatmap.getContext());
+            if (rval != FFIError.Ok) {
+                throw new FFIException("Error cloning beatmap", rval);
+            }
+        }
+
         // Convert the Beatmap to the specified mode
         public boolean convert(Mode mode, Mods mods) {
-            return RosuPPLib.beatmap_convert(getContext(), mode.getValue(), mods.getContext());
+            return RosuPPLib.beatmap_convert(
+                getContext(),
+                mode.getValue(),
+                mods.getContext()
+            );
         }
 
         // Convert the Beatmap to the specified mode
         public boolean convert(Mode mode) throws FFIException {
             var mods = Mods.New(mode);
-            return RosuPPLib.beatmap_convert(getContext(), mode.getValue(), mods.getContext());
+            return RosuPPLib.beatmap_convert(
+                getContext(),
+                mode.getValue(),
+                mods.getContext()
+            );
         }
 
         // Get the BPM of the Beatmap
@@ -913,14 +1459,50 @@ public class RosuFFI {
             return RosuPPLib.beatmap_total_break_time(getContext());
         }
 
-        // Get the mode of the Beatmap
-        public Mode mode() {
-            return Mode.fromValue(RosuPPLib.beatmap_mode(getContext()));
+        public int version() {
+            return RosuPPLib.beatmap_version(getContext());
         }
 
         // Check if the Beatmap is a converted map
         public boolean isConvert() {
             return RosuPPLib.beatmap_is_convert(getContext());
+        }
+
+        public float stackLeniency() {
+            return RosuPPLib.beatmap_stack_leniency(getContext());
+        }
+
+        // Get the mode of the Beatmap
+        public Mode mode() {
+            return Mode.fromValue(RosuPPLib.beatmap_mode(getContext()));
+        }
+
+        public float ar() {
+            return RosuPPLib.beatmap_ar(getContext());
+        }
+
+        public float cs() {
+            return RosuPPLib.beatmap_cs(getContext());
+        }
+
+        public float hp() {
+            return RosuPPLib.beatmap_hp(getContext());
+        }
+
+        public float od() {
+            return RosuPPLib.beatmap_od(getContext());
+        }
+
+        public double sliderMultiplier() {
+            return RosuPPLib.beatmap_slider_multiplier(getContext());
+        }
+
+        public double sliderTickRate() {
+            return RosuPPLib.beatmap_slider_tick_rate(getContext());
+        }
+
+        public OptionTooSuspicious checkSuspicion() {
+            return RosuPPLib.beatmap_check_suspicion(getContext());
         }
 
         // Getter for the context
@@ -939,13 +1521,17 @@ public class RosuFFI {
     }
 
     public static class BeatmapAttributesBuilder implements AutoCloseable {
+
         private final PointerByReference _context; // Context for BeatmapAttributesBuilder
 
         public BeatmapAttributesBuilder() throws FFIException {
             _context = new PointerByReference();
             int rval = RosuPPLib.beatmap_attributes_new(_context);
             if (rval != FFIError.Ok) {
-                throw new FFIException("Error creating BeatmapAttributesBuilder", rval);
+                throw new FFIException(
+                    "Error creating BeatmapAttributesBuilder",
+                    rval
+                );
             }
         }
 
@@ -954,7 +1540,10 @@ public class RosuFFI {
         public void close() throws FFIException {
             int rval = RosuPPLib.beatmap_attributes_destroy(_context);
             if (rval != FFIError.Ok) {
-                throw new FFIException("Error destroying BeatmapAttributesBuilder", rval);
+                throw new FFIException(
+                    "Error destroying BeatmapAttributesBuilder",
+                    rval
+                );
             }
         }
 
@@ -965,7 +1554,10 @@ public class RosuFFI {
 
         // Method to set mods (using IntPtr)
         public void setMods(Mods mods) {
-            RosuPPLib.beatmap_attributes_p_mods(getContext(), mods.getContext());
+            RosuPPLib.beatmap_attributes_p_mods(
+                getContext(),
+                mods.getContext()
+            );
         }
 
         // Method to set mods (using uint)
@@ -1013,7 +1605,10 @@ public class RosuFFI {
 
         // Method to build BeatmapAttributes
         public RosuPPLib.BeatmapAttributes build(Beatmap beatmap) {
-            return RosuPPLib.beatmap_attributes_build(getContext(), beatmap.getContext());
+            return RosuPPLib.beatmap_attributes_build(
+                getContext(),
+                beatmap.getContext()
+            );
         }
 
         // Getter for the context
@@ -1023,6 +1618,7 @@ public class RosuFFI {
     }
 
     public static class Difficulty implements AutoCloseable {
+
         private final PointerByReference _context;
 
         public Difficulty() throws FFIException {
@@ -1092,7 +1688,10 @@ public class RosuFFI {
 
         // Method to set hardrock offsets
         public void setHardrockOffsets(boolean hardrockOffsets) {
-            RosuPPLib.difficulty_hardrock_offsets(getContext(), hardrockOffsets);
+            RosuPPLib.difficulty_hardrock_offsets(
+                getContext(),
+                hardrockOffsets
+            );
         }
 
         // Method to set lazer
@@ -1102,7 +1701,10 @@ public class RosuFFI {
 
         // Method to calculate DifficultyAttributes from beatmap
         public RosuPPLib.DifficultyAttributes calculate(Beatmap beatmap) {
-            return RosuPPLib.difficulty_calculate(getContext(), beatmap.getContext());
+            return RosuPPLib.difficulty_calculate(
+                getContext(),
+                beatmap.getContext()
+            );
         }
 
         // Method to get clock rate
@@ -1117,6 +1719,7 @@ public class RosuFFI {
     }
 
     public static class Performance implements AutoCloseable {
+
         private final PointerByReference _context;
 
         public Performance() throws FFIException {
@@ -1191,12 +1794,18 @@ public class RosuFFI {
 
         // Method to set hardrock offsets
         public void setHardrockOffsets(boolean hardrockOffsets) {
-            RosuPPLib.performance_hardrock_offsets(getContext(), hardrockOffsets);
+            RosuPPLib.performance_hardrock_offsets(
+                getContext(),
+                hardrockOffsets
+            );
         }
 
         // Method to set hardrock offsets
         public void setHitResultPriority(HitResultPriority hitresult_priority) {
-            RosuPPLib.performance_hitresult_priority(getContext(), hitresult_priority.value);
+            RosuPPLib.performance_hitresult_priority(
+                getContext(),
+                hitresult_priority.value
+            );
         }
 
         public void setCombo(long combo) {
@@ -1204,7 +1813,10 @@ public class RosuFFI {
         }
 
         public void setState(RosuPPLib.ScoreState state) {
-            RosuPPLib.performance_state(getContext(), (RosuPPLib.ScoreState.ByValue)state);
+            RosuPPLib.performance_state(
+                getContext(),
+                (RosuPPLib.ScoreState.ByValue) state
+            );
         }
 
         public void setAccuracy(double accuracy) {
@@ -1222,7 +1834,6 @@ public class RosuFFI {
         public void setSmallTickHits(long smallTickHits) {
             RosuPPLib.performance_small_tick_hits(getContext(), smallTickHits);
         }
-
 
         public void setSliderEndHits(long sliderEndHits) {
             RosuPPLib.performance_slider_end_hits(getContext(), sliderEndHits);
@@ -1254,21 +1865,37 @@ public class RosuFFI {
         }
 
         public RosuPPLib.ScoreState generateState(Beatmap beatmap) {
-            return RosuPPLib.performance_generate_state(getContext(), beatmap.getContext());
+            return RosuPPLib.performance_generate_state(
+                getContext(),
+                beatmap.getContext()
+            );
         }
 
-        public RosuPPLib.ScoreState generateStateFromDifficulty(RosuPPLib.DifficultyAttributes difficultyAttributes) {
-            return RosuPPLib.performance_generate_state_from_difficulty(getContext(), (RosuPPLib.DifficultyAttributes.ByValue)difficultyAttributes);
+        public RosuPPLib.ScoreState generateStateFromDifficulty(
+            RosuPPLib.DifficultyAttributes difficultyAttributes
+        ) {
+            return RosuPPLib.performance_generate_state_from_difficulty(
+                getContext(),
+                (RosuPPLib.DifficultyAttributes.ByValue) difficultyAttributes
+            );
         }
 
         // Method to calculate PerformanceAttributes from beatmap
         public RosuPPLib.PerformanceAttributes calculate(Beatmap beatmap) {
-            return RosuPPLib.performance_calculate(getContext(), beatmap.getContext());
+            return RosuPPLib.performance_calculate(
+                getContext(),
+                beatmap.getContext()
+            );
         }
 
         // Method to calculate PerformanceAttributes from DifficultyAttributes
-        public RosuPPLib.PerformanceAttributes calculateFromDifficulty(RosuPPLib.DifficultyAttributes difficultyAttributes) {
-            return RosuPPLib.performance_calculate_from_difficulty(getContext(), (RosuPPLib.DifficultyAttributes.ByValue)difficultyAttributes);
+        public RosuPPLib.PerformanceAttributes calculateFromDifficulty(
+            RosuPPLib.DifficultyAttributes difficultyAttributes
+        ) {
+            return RosuPPLib.performance_calculate_from_difficulty(
+                getContext(),
+                (RosuPPLib.DifficultyAttributes.ByValue) difficultyAttributes
+            );
         }
 
         // Method to get clock rate
@@ -1283,8 +1910,10 @@ public class RosuFFI {
     }
 
     public static class GradualDifficulty {
+
         @SuppressWarnings("unused")
         protected final Cleaner.Cleanable cleanable;
+
         private final PointerByReference _context; // Context for BeatmapAttributesBuilder
 
         private GradualDifficulty() {
@@ -1297,7 +1926,10 @@ public class RosuFFI {
                 int rval = RosuPPLib.gradual_difficulty_destroy(context);
                 if (rval != FFIError.Ok) {
                     try {
-                        throw new FFIException("Error destroying GradualDifficulty", rval);
+                        throw new FFIException(
+                            "Error destroying GradualDifficulty",
+                            rval
+                        );
                     } catch (FFIException e) {
                         throw new RuntimeException(e);
                     }
@@ -1306,21 +1938,43 @@ public class RosuFFI {
         }
 
         /// Create a [`GradualDifficulty`] for a map of any mode.
-        public static GradualDifficulty New(Difficulty difficulty, Beatmap beatmap) throws FFIException {
+        public static GradualDifficulty New(
+            Difficulty difficulty,
+            Beatmap beatmap
+        ) throws FFIException {
             var m = new GradualDifficulty();
-            int rval = RosuPPLib.gradual_difficulty_new(m._context, difficulty.getContext(), beatmap.getContext());
+            int rval = RosuPPLib.gradual_difficulty_new(
+                m._context,
+                difficulty.getContext(),
+                beatmap.getContext()
+            );
             if (rval != FFIError.Ok) {
-                throw new FFIException("Error creating GradualDifficulty", rval);
+                throw new FFIException(
+                    "Error creating GradualDifficulty",
+                    rval
+                );
             }
             return m;
         }
 
         /// Create a [`GradualDifficulty`] for a [`Beatmap`] on a specific [`GameMode`].
-        public static GradualDifficulty NewWithMode(Difficulty difficulty, Beatmap beatmap, Mode mode) throws FFIException {
+        public static GradualDifficulty NewWithMode(
+            Difficulty difficulty,
+            Beatmap beatmap,
+            Mode mode
+        ) throws FFIException {
             var m = new GradualDifficulty();
-            int rval = RosuPPLib.gradual_difficulty_new_with_mode(m._context, difficulty.getContext(), beatmap.getContext(), mode.getValue());
+            int rval = RosuPPLib.gradual_difficulty_new_with_mode(
+                m._context,
+                difficulty.getContext(),
+                beatmap.getContext(),
+                mode.getValue()
+            );
             if (rval != FFIError.Ok) {
-                throw new FFIException("Error creating GradualDifficulty", rval);
+                throw new FFIException(
+                    "Error creating GradualDifficulty",
+                    rval
+                );
             }
             return m;
         }
@@ -1344,8 +1998,10 @@ public class RosuFFI {
     }
 
     public static class GradualPerformance {
+
         @SuppressWarnings("unused")
         protected final Cleaner.Cleanable cleanable;
+
         private final PointerByReference _context; // Context for BeatmapAttributesBuilder
 
         private GradualPerformance() {
@@ -1358,7 +2014,10 @@ public class RosuFFI {
                 int rval = RosuPPLib.gradual_performance_destroy(context);
                 if (rval != FFIError.Ok) {
                     try {
-                        throw new FFIException("Error destroying GradualPerformance", rval);
+                        throw new FFIException(
+                            "Error destroying GradualPerformance",
+                            rval
+                        );
                     } catch (FFIException e) {
                         throw new RuntimeException(e);
                     }
@@ -1367,35 +2026,74 @@ public class RosuFFI {
         }
 
         /// Create a [`GradualDifficulty`] for a map of any mode.
-        public static GradualPerformance New(Difficulty difficulty, Beatmap beatmap) throws FFIException {
+        public static GradualPerformance New(
+            Difficulty difficulty,
+            Beatmap beatmap
+        ) throws FFIException {
             var m = new GradualPerformance();
-            int rval = RosuPPLib.gradual_performance_new(m._context, difficulty.getContext(), beatmap.getContext());
+            int rval = RosuPPLib.gradual_performance_new(
+                m._context,
+                difficulty.getContext(),
+                beatmap.getContext()
+            );
             if (rval != FFIError.Ok) {
-                throw new FFIException("Error creating GradualPerformance", rval);
+                throw new FFIException(
+                    "Error creating GradualPerformance",
+                    rval
+                );
             }
             return m;
         }
 
         /// Create a [`GradualDifficulty`] for a [`Beatmap`] on a specific [`GameMode`].
-        public static GradualPerformance NewWithMode(Difficulty difficulty, Beatmap beatmap, Mode mode) throws FFIException {
+        public static GradualPerformance NewWithMode(
+            Difficulty difficulty,
+            Beatmap beatmap,
+            Mode mode
+        ) throws FFIException {
             var m = new GradualPerformance();
-            int rval = RosuPPLib.gradual_performance_new_with_mode(m._context, difficulty.getContext(), beatmap.getContext(), mode.getValue());
+            int rval = RosuPPLib.gradual_performance_new_with_mode(
+                m._context,
+                difficulty.getContext(),
+                beatmap.getContext(),
+                mode.getValue()
+            );
             if (rval != FFIError.Ok) {
-                throw new FFIException("Error creating GradualPerformance", rval);
+                throw new FFIException(
+                    "Error creating GradualPerformance",
+                    rval
+                );
             }
             return m;
         }
 
-        public RosuPPLib.OptionPerformanceAttributes Next(RosuPPLib.ScoreState state) {
-            return RosuPPLib.gradual_performance_next(getContext(), (RosuPPLib.ScoreState.ByValue)state);
+        public RosuPPLib.OptionPerformanceAttributes Next(
+            RosuPPLib.ScoreState state
+        ) {
+            return RosuPPLib.gradual_performance_next(
+                getContext(),
+                (RosuPPLib.ScoreState.ByValue) state
+            );
         }
 
-        public RosuPPLib.OptionPerformanceAttributes Last(RosuPPLib.ScoreState state) {
-            return RosuPPLib.gradual_performance_last(getContext(), (RosuPPLib.ScoreState.ByValue)state);
+        public RosuPPLib.OptionPerformanceAttributes Last(
+            RosuPPLib.ScoreState state
+        ) {
+            return RosuPPLib.gradual_performance_last(
+                getContext(),
+                (RosuPPLib.ScoreState.ByValue) state
+            );
         }
 
-        public RosuPPLib.OptionPerformanceAttributes Nth(long n, RosuPPLib.ScoreState state) {
-            return RosuPPLib.gradual_performance_nth(getContext(), (RosuPPLib.ScoreState.ByValue)state, n);
+        public RosuPPLib.OptionPerformanceAttributes Nth(
+            long n,
+            RosuPPLib.ScoreState state
+        ) {
+            return RosuPPLib.gradual_performance_nth(
+                getContext(),
+                (RosuPPLib.ScoreState.ByValue) state,
+                n
+            );
         }
 
         public long Len() {
@@ -1409,8 +2107,10 @@ public class RosuFFI {
     }
 
     public static class Mods {
+
         @SuppressWarnings("unused")
         protected final Cleaner.Cleanable cleanable;
+
         private final PointerByReference _context; // Context for BeatmapAttributesBuilder
 
         private Mods() {
@@ -1442,9 +2142,14 @@ public class RosuFFI {
         }
 
         /// from acronyms
-        public static Mods fromAcronyms(String mods, Mode mode) throws FFIException {
+        public static Mods fromAcronyms(String mods, Mode mode)
+            throws FFIException {
             var m = new Mods();
-            int rval = RosuPPLib.mods_from_acronyms(m._context, mods, mode.getValue());
+            int rval = RosuPPLib.mods_from_acronyms(
+                m._context,
+                mods,
+                mode.getValue()
+            );
             if (rval != FFIError.Ok) {
                 throw new FFIException("Error creating Mods", rval);
             }
@@ -1454,7 +2159,11 @@ public class RosuFFI {
         /// from bits
         public static Mods fromBits(long mods, Mode mode) throws FFIException {
             var m = new Mods();
-            int rval = RosuPPLib.mods_from_bits(m._context, mods, mode.getValue());
+            int rval = RosuPPLib.mods_from_bits(
+                m._context,
+                mods,
+                mode.getValue()
+            );
             if (rval != FFIError.Ok) {
                 throw new FFIException("Error creating Mods", rval);
             }
@@ -1462,9 +2171,18 @@ public class RosuFFI {
         }
 
         /// from json
-        public static Mods fromJson(String mods, Mode mode, boolean deny_unknown_fields) throws FFIException {
+        public static Mods fromJson(
+            String mods,
+            Mode mode,
+            boolean deny_unknown_fields
+        ) throws FFIException {
             var m = new Mods();
-            int rval = RosuPPLib.mods_from_json(m._context, mods, mode.getValue(), deny_unknown_fields);
+            int rval = RosuPPLib.mods_from_json(
+                m._context,
+                mods,
+                mode.getValue(),
+                deny_unknown_fields
+            );
             if (rval != FFIError.Ok) {
                 throw new FFIException("Error creating Mods", rval);
             }
@@ -1494,7 +2212,11 @@ public class RosuFFI {
         }
 
         public boolean insertJson(String mod, boolean deny_unknown_fields) {
-            return RosuPPLib.mods_insert_json(getContext(), mod, deny_unknown_fields);
+            return RosuPPLib.mods_insert_json(
+                getContext(),
+                mod,
+                deny_unknown_fields
+            );
         }
 
         public boolean insert(String mod) {
@@ -1519,11 +2241,11 @@ public class RosuFFI {
         }
     }
 
-
     public static class OwnedString {
 
         @SuppressWarnings("unused")
         private final Cleaner.Cleanable cleanable;
+
         private final PointerByReference _context; // Context for BeatmapAttributesBuilder
 
         public OwnedString() throws FFIException {
@@ -1575,30 +2297,41 @@ public class RosuFFI {
         }
     }
 
-    public static OwnedString debugDifficyltyAttributes(RosuPPLib.DifficultyAttributes attr) throws FFIException {
+    public static OwnedString debugDifficyltyAttributes(
+        RosuPPLib.DifficultyAttributes attr
+    ) throws FFIException {
         var s = new OwnedString();
         RosuPPLib.debug_difficylty_attributes(attr, s.getContext());
         return s;
     }
 
-    public static OwnedString debugPerformanceAttributes(RosuPPLib.PerformanceAttributes attr) throws FFIException {
+    public static OwnedString debugPerformanceAttributes(
+        RosuPPLib.PerformanceAttributes attr
+    ) throws FFIException {
         var s = new OwnedString();
         RosuPPLib.debug_performance_attributes(attr, s.getContext());
         return s;
     }
 
-    public static OwnedString debugScoreState(RosuPPLib.ScoreState attr) throws FFIException {
+    public static OwnedString debugScoreState(RosuPPLib.ScoreState attr)
+        throws FFIException {
         var s = new OwnedString();
         RosuPPLib.debug_score_state(attr, s.getContext());
         return s;
     }
 
-    public static double calculateAccuacy(RosuPPLib.ScoreState state, RosuPPLib.DifficultyAttributes attr, OsuScoreOrigin origin) {
+    public static double calculateAccuacy(
+        RosuPPLib.ScoreState state,
+        RosuPPLib.DifficultyAttributes attr,
+        OsuScoreOrigin origin
+    ) {
         return RosuPPLib.calculate_accuacy(state, attr, origin.value);
     }
 
     public static class FFIException extends Exception {
+
         public int code;
+
         public FFIException(String message, int code) {
             super(message + ", code: " + code);
             this.code = code;

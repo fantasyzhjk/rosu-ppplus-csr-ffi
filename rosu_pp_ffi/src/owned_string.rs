@@ -16,7 +16,7 @@ pub struct OwnedString {
 #[ffi_service(error = "FFIError", prefix = "string_")]
 impl OwnedString {
     #[ffi_service_ctor]
-    pub fn from_c_str(str: AsciiPointer) -> Result<Self, Error> {
+    pub fn from_c_str(str: AsciiPointer<'_>) -> Result<Self, Error> {
         Ok(Self {
             inner: MaybeUninit::new(str.as_c_str().ok_or(Error::Null)?.to_owned()),
             is_init: true
@@ -37,7 +37,7 @@ impl OwnedString {
     }
 
     #[ffi_service_method(on_panic = "undefined_behavior")]
-    pub fn to_cstr(&self) -> AsciiPointer {
+    pub fn to_cstr(&self) -> AsciiPointer<'_> {
         AsciiPointer::from_cstr(unsafe { self.inner.assume_init_ref() })
     }
 }

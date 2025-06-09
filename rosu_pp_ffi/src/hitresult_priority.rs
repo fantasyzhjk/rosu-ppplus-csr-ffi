@@ -5,6 +5,7 @@ impl From<HitResultPriority> for rosu_pp::any::HitResultPriority {
         match value {
             HitResultPriority::BestCase => rosu_pp::any::HitResultPriority::BestCase,
             HitResultPriority::WorstCase => rosu_pp::any::HitResultPriority::WorstCase,
+            HitResultPriority::Fastest => rosu_pp::any::HitResultPriority::Fastest,
         }
     }
 }
@@ -16,6 +17,7 @@ pub enum HitResultPriority {
     #[default]
     BestCase = 0,
     WorstCase = 1,
+    Fastest = 2,
 }
 
 impl std::fmt::Display for HitResultPriority {
